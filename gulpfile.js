@@ -8,7 +8,7 @@ gulp.task('babel', function() {
 });
 
 gulp.task('watch', function() {
-  gulp.watch('./*.es6', ['babel'])
+  gulp.watch('./src/**/*.js', ['babel'])
 });
 
 gulp.task('default', ['babel', 'watch']);
