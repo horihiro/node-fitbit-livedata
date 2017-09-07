@@ -1,5 +1,107 @@
-import os from 'os';
-import noble from 'noble';
+import EventEmitter from 'events';
+import Noble from 'noble/lib/noble';
+import resolveBindings from 'noble/lib/resolve-bindings';
+import setServices from './setServices';
+
+class PrimaryService extends EventEmitter {
+  constructor(options) {
+    super();
+    this.uuid = options.uuid.replace(/-/g, '');
+    this.characteristics = options.characteristics || [];
+  }
+
+  toString() {
+    return JSON.stringify({
+      uuid: this.uuid,
+      characteristics: this.characteristics
+    });
+  }
+}
+
+class Characteristic extends EventEmitter {
+  constructor(options) {
+    super();
+
+    this.uuid = options.uuid.replace(/-/g, '');
+    this.properties = options.properties || [];
+    this.secure = options.secure || [];
+    this.value = options.value || null;
+    this.descriptors = options.descriptors || [];
+  
+    if (this.value && (this.properties.length !== 1 || this.properties[0] !== 'read')) {
+      throw new Error('Characteristics with value can be read only!');
+    }
+  
+    if (options.onReadRequest) {
+      this.onReadRequest = options.onReadRequest;
+    }
+  
+    if (options.onWriteRequest) {
+      this.onWriteRequest = options.onWriteRequest;
+    }
+  
+    if (options.onSubscribe) {
+      this.onSubscribe = options.onSubscribe;
+    }
+  
+    if (options.onUnsubscribe) {
+      this.onUnsubscribe = options.onUnsubscribe;
+    }
+  
+    if (options.onNotify) {
+      this.onNotify = options.onNotify;
+    }
+  
+    if (options.onIndicate) {
+      this.onIndicate = options.onIndicate;
+    }
+  
+    this.on('readRequest', this.onReadRequest.bind(this));
+    this.on('writeRequest', this.onWriteRequest.bind(this));
+    this.on('subscribe', this.onSubscribe.bind(this));
+    this.on('unsubscribe', this.onUnsubscribe.bind(this));
+    this.on('notify', this.onNotify.bind(this));
+    this.on('indicate', this.onIndicate.bind(this));
+  }
+
+  toString() {
+    return JSON.stringify({
+      uuid: this.uuid,
+      properties: this.properties,
+      secure: this.secure,
+      value: this.value,
+      descriptors: this.descriptors
+    });  
+  }
+
+  onReadRequest(offset, callback) {
+    callback(this.RESULT_UNLIKELY_ERROR, null);
+  }
+
+  onWriteRequest(data, offset, withoutResponse, callback) {
+    callback(this.RESULT_UNLIKELY_ERROR);
+  }
+
+  onSubscribe(maxValueSize, updateValueCallback) {
+    this.maxValueSize = maxValueSize;
+    this.updateValueCallback = updateValueCallback;
+  }
+
+  onUnsubscribe() {
+    this.maxValueSize = null;
+    this.updateValueCallback = null;
+  }
+
+  onNotify() {
+  }
+
+  onIndicate() {
+  }
+}
+
+const bindings = resolveBindings();
+
+bindings.setServices = setServices();
 
 const UUID_SERVICE_NOTIFICATION_CENTER = '16bcfd00-253f-c348-e831-0db3e334d580';
 // const UUID_CHARACTERISTICS_CONTROL_POINT = '16bcfd01-253f-c348-e831-0db3e334d580';
@@ -31,32 +133,13 @@ const onIndicate = function() {
   console.log(`onIndicate: ${this.uuid}`);
 }
 
-Object.getPrototypeOf(noble).setServices = function (services, callback) {
-  if (!this._blenoBindings) {
-    this.rssi = 0;
-    this.mtu = 20;
-    const platform = os.platform();
-    if (platform === 'darwin') {
-      this._blenoBindings = require('./mac/bindings');
-    } else if (platform === 'linux' || platform === 'freebsd' || platform === 'win32' || platform === 'android') {
-      this._blenoBindings = require('./hci-socket/bindings');
-    } else {
-      throw new Error('Unsupported platform');
-    }
-    this._blenoBindings.on('stateChange', () => {
-      this._blenoBindings.setServices(services);
-    });
-    this._blenoBindings.init();
-  } else {
-    this._blenoBindings.setServices(services);
-  }
+Noble.prototype.setServices = function (services, callback) {
+  this._bindings.setServices(services);
   if (callback) {
     this.once('servicesSet', callback);
   }
 };
 
-const PrimaryService = require('./primary-service');
-const Characteristic = require('./characteristic');
 const primaryService = new PrimaryService({
   uuid: UUID_SERVICE_NOTIFICATION_CENTER,
   characteristics: [
@@ -118,7 +201,9 @@ const primaryService = new PrimaryService({
     // }),
   ]
 });
-noble.setServices([primaryService], (err) => {
+const noble = new Noble(bindings);
+noble.on('stateChange', (state) => {
+  if (state === 'poweredOn') noble.setServices([primaryService]);
 });
-export default class GattServer {
-}
+
+export default noble;

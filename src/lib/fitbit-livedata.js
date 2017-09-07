@@ -1,10 +1,10 @@
 import EventEmitter from 'events';
 import { exec } from 'child_process';
 import path from 'path';
-import noble from 'noble';
+// import noble from 'noble';
 import debug from 'debug';
 // import TrackerAuthCredentials from './tracker-auth-credentials';
-// import gattServer from './gatt/server';
+import nobleWithGattServer from './gatt/server';
 
 const execAsync = (cmd) => {
   return new Promise((resolve, reject) => {
@@ -19,19 +19,19 @@ const UUID_SERVICE_GENERIC_ACCESS = '00001800-0000-1000-8000-00805f9b34fb';
 const UUID_SERVICE_FITBIT_COMM =  'adabfb00-6e7d-4601-bda2-bffaa68956ba';
 const UUID_SERVICE_FITBIT_LIVE =  '558dfa00-4fa8-4105-9f02-4eaa93e62980';
 
-const UUID_CHARACTERISTICS_GENERIC_ACCESS = '00002A00-0000-1000-8000-00805f9b34fb';
-const UUID_CHARACTERISTICS_DEVICE_NAME = 'fb00';
-const UUID_CHARACTERISTICS_APPEARANCE = '2a01';
-const UUID_CHARACTERISTICS_MANUF_NAME = '2a29';
-const UUID_CHARACTERISTICS_BATTERY_LEVEL = '2a19';
-const UUID_CHARACTERISTICS_READ_DATA = 'adabfb01-6e7d-4601-bda2-bffaa68956ba';
-const UUID_CHARACTERISTICS_WRITE_DATA = 'adabfb02-6e7d-4601-bda2-bffaa68956ba';
-const UUID_CHARACTERISTICS_LIVE_DATA = '558dfa01-4fa8-4105-9f02-4eaa93e62980';
-const UUID_CHARACTERISTICS_READ_UNKNOWN1 = 'adabfb03-6e7d-4601-bda2-bffaa68956ba';
-const UUID_CHARACTERISTICS_READ_UNKNOWN2 = 'adabfb04-6e7d-4601-bda2-bffaa68956ba';
-const UUID_CHARACTERISTICS_READ_UNKNOWN3 = 'adabfb05-6e7d-4601-bda2-bffaa68956ba';
+const UUID_CHARACTERISTIC_GENERIC_ACCESS = '00002A00-0000-1000-8000-00805f9b34fb';
+const UUID_CHARACTERISTIC_DEVICE_NAME = 'fb00';
+const UUID_CHARACTERISTIC_APPEARANCE = '2a01';
+const UUID_CHARACTERISTIC_MANUF_NAME = '2a29';
+const UUID_CHARACTERISTIC_BATTERY_LEVEL = '2a19';
+const UUID_CHARACTERISTIC_READ_DATA = 'adabfb01-6e7d-4601-bda2-bffaa68956ba';
+const UUID_CHARACTERISTIC_WRITE_DATA = 'adabfb02-6e7d-4601-bda2-bffaa68956ba';
+const UUID_CHARACTERISTIC_LIVE_DATA = '558dfa01-4fa8-4105-9f02-4eaa93e62980';
+const UUID_CHARACTERISTIC_READ_UNKNOWN1 = 'adabfb03-6e7d-4601-bda2-bffaa68956ba';
+const UUID_CHARACTERISTIC_READ_UNKNOWN2 = 'adabfb04-6e7d-4601-bda2-bffaa68956ba';
+const UUID_CHARACTERISTIC_READ_UNKNOWN3 = 'adabfb05-6e7d-4601-bda2-bffaa68956ba';
 
-const characteristicsUuids = [];
+const characteristicUuids = [];
 const serviceUuids = [];
 
 const connectAsync = (peripheral) => {
@@ -52,13 +52,13 @@ const discoverServicesAsync = (peripheral, serviceUUIDs) => {
   });
 }
 
-const discoverSomeServicesAndCharacteristicsAsync = (peripheral, serviceUUIDs, characteristicsUUIDs) => {
+const discoverSomeServicesAndCharacteristicsAsync = (peripheral, serviceUUIDs, characteristicUUIDs) => {
   return new Promise((resolve, reject) => {
-    peripheral.discoverSomeServicesAndCharacteristics(serviceUUIDs, characteristicsUUIDs, (err, services, characteristicses) => {
+    peripheral.discoverSomeServicesAndCharacteristics(serviceUUIDs, characteristicUUIDs, (err, services, characteristics) => {
       if (err) reject(err);
       else resolve({
         services,
-        characteristicses
+        characteristics
       });
     });
   });
@@ -68,41 +68,41 @@ const discoverAllServicesAndCharacteristicsAsync = (peripheral) => {
   return discoverSomeServicesAndCharacteristicsAsync(peripheral, [], []);
 };
 
-const discoverDescriptorsAsync = (characteristics) => {
+const discoverDescriptorsAsync = (characteristic) => {
   return new Promise((resolve, reject) => {
-    characteristics.discoverDescriptors((err, descriptor) => {
+    characteristic.discoverDescriptors((err, descriptor) => {
       if (err) reject(err);
       else resolve(descriptor);
     });
   });
 };
 
-const subscribeAsync = (characteristics) => {
+const subscribeAsync = (characteristic) => {
   return new Promise((resolve, reject) => {
-    characteristics.subscribe(() => {
+    characteristic.subscribe(() => {
       resolve();
     })
   });
 };
 
-const unsubscribeAsync = (characteristics) => {
+const unsubscribeAsync = (characteristic) => {
   return new Promise((resolve, reject) => {
-    characteristics.unsubscribe(() => {
+    characteristic.unsubscribe(() => {
       resolve();
     })
   });
 };
 
-const writeData = (requestCharacteristics, requestData, responseCharacteristics, condition) => {
+const writeData = (requestCharacteristic, requestData, responseCharacteristic, condition) => {
   return new Promise((resolve, reject) => {
     const onNotify = function(responseData) {
       debug('tracker')(`${new Date()}|${this.uuid} --> : (${responseData.length}) ${responseData.toString('hex')}`);
       if (condition(responseData)) resolve(responseData);
       else this.once('read', onNotify.bind(this));
     };
-    responseCharacteristics.once('read', onNotify.bind(responseCharacteristics));
-    requestCharacteristics.write(requestData, true, () => {
-      debug('tracker')(`${new Date()}|${requestCharacteristics.uuid} <-- : (${requestData.length}) ${requestData.toString('hex')}`);
+    responseCharacteristic.once('read', onNotify.bind(responseCharacteristic));
+    requestCharacteristic.write(requestData, true, () => {
+      debug('tracker')(`${new Date()}|${requestCharacteristic.uuid} <-- : (${requestData.length}) ${requestData.toString('hex')}`);
     });
   });
 };
@@ -138,27 +138,27 @@ export class Tracker extends EventEmitter {
       return discoverSomeServicesAndCharacteristicsAsync(
         this.peripheral,
         serviceUuids.map(e => e.replace(/-/g, '')),
-        characteristicsUuids.map(e => e.replace(/-/g, ''))
+        characteristicUuids.map(e => e.replace(/-/g, ''))
       );
     })
     .then((data) => {
-      console.log(`${data.characteristicses.length} characteristicses are found`);
+      console.log(`${data.characteristics.length} characteristics are found`);
       return Promise.all(
-        data.characteristicses.map((ch) => discoverDescriptorsAsync(ch))
-      ).then(() => data.characteristicses);
+        data.characteristics.map((ch) => discoverDescriptorsAsync(ch))
+      ).then(() => data.characteristics);
     })
-    .then((characteristicses) => {
-      const control = characteristicses.filter((ch) => {
-        return ch.uuid === UUID_CHARACTERISTICS_READ_DATA.replace(/-/g, '');
+    .then((characteristics) => {
+      const control = characteristics.filter((ch) => {
+        return ch.uuid === UUID_CHARACTERISTIC_READ_DATA.replace(/-/g, '');
       })[0];
-      const live = characteristicses.filter((ch) => {
-        return ch.uuid === UUID_CHARACTERISTICS_LIVE_DATA.replace(/-/g, '');
+      const live = characteristics.filter((ch) => {
+        return ch.uuid === UUID_CHARACTERISTIC_LIVE_DATA.replace(/-/g, '');
       })[0];
-      const writable = characteristicses.filter((ch) => {
-        return ch.uuid === UUID_CHARACTERISTICS_WRITE_DATA.replace(/-/g, '');
+      const writable = characteristics.filter((ch) => {
+        return ch.uuid === UUID_CHARACTERISTIC_WRITE_DATA.replace(/-/g, '');
       })[0];
-      const read = characteristicses.filter((ch) => {
-        return ch.uuid === UUID_CHARACTERISTICS_MANUF_NAME.replace(/-/g, '');
+      const read = characteristics.filter((ch) => {
+        return ch.uuid === UUID_CHARACTERISTIC_MANUF_NAME.replace(/-/g, '');
       })[0];
       return subscribeAsync(control)
         .then(() => {
@@ -279,7 +279,7 @@ export default class FitbitLiveData extends EventEmitter {
   }
 
   scan() {
-    noble.on('discover', (peripheral) => {
+    nobleWithGattServer.on('discover', (peripheral) => {
       if (peripheral.address !== 'unknown') debug('tracker')(peripheral.address);
       const trackers = this.trackerInfos.filter((info) => {
         return info.trackerId === peripheral.address;
@@ -288,22 +288,22 @@ export default class FitbitLiveData extends EventEmitter {
         console.log(`'${peripheral.address}' is discovered`);
         trackers[0].tracker = new Tracker(peripheral, trackers[0].auth);
         this.emit('discover', trackers[0].tracker);
-        if (this.trackerInfos.filter((info) => {return !info.tracker;}).length === 0) noble.stopScanning();
+        if (this.trackerInfos.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
         // connect(peripheral);
       }
     });
     
-    if (noble.state === 'poweredOn') {
+    if (nobleWithGattServer.state === 'poweredOn') {
       debug('tracker')('already powered on.');
       debug('tracker')('start scanning...');
-      noble.startScanning();
+      nobleWithGattServer.startScanning();
     } else {
-      noble.on('stateChange', (state) => {
+      nobleWithGattServer.on('stateChange', (state) => {
         if (state === 'poweredOn') {
           debug('tracker')('start scanning...');
-          noble.startScanning();
+          nobleWithGattServer.startScanning();
         } else {
-          noble.stopScanning();
+          nobleWithGattServer.stopScanning();
         }
       });
     }
