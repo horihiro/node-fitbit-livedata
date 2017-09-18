@@ -202,7 +202,7 @@ export class Tracker extends EventEmitter {
           const nonce = this.auth.btleClientAuthCredentials.nonce;
           const authSubKey = this.auth.btleClientAuthCredentials.authSubKey;
           const binPath = path.join(__dirname, '../../bin');
-          return execAsync(`java -cp "${binPath}/*" Main ${data.toString('hex')} ${authSubKey} ${nonce}`)
+          return execAsync(`java -cp "${binPath}/*" Main ${data.toString('hex')} ${authSubKey}`)
             .then((res) => {
               const bytes = res.stdout.match(/.{2}/g).map((seg) => {
                 return parseInt(seg, 16);

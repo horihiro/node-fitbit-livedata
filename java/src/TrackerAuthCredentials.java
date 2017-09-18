@@ -3,19 +3,16 @@ import java.util.List;
 
 public final class TrackerAuthCredentials {
     public static final String f21167a = "TrackerAuthCredentials";
-    byte[] f21168b;
-    int f21169c;
+    private byte[] f21168b;
     private final String f21170d;
-    private final String f21171e;
 
-    public TrackerAuthCredentials(String str, String str2) {
+    public TrackerAuthCredentials(String str) {
         this.f21170d = str;
-        this.f21171e = str2;
         m25375e();
     }
 
     public boolean m25376a() {
-        return (this.f21170d == null || this.f21170d.length() == 0 || this.f21171e == null || this.f21171e.length() == 0) ? false : true;
+        return (this.f21170d != null && this.f21170d.length() != 0 );
     }
 
     private void m25375e() {
@@ -33,7 +30,6 @@ public final class TrackerAuthCredentials {
                 this.f21168b[i] = ((Byte) arrayList.get(i)).byteValue();
                 i++;
             }
-            this.f21169c = Integer.parseInt(this.f21171e);
         }
     }
 

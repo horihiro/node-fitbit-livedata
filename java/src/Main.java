@@ -12,7 +12,6 @@ class Main {
   public static void main(String args[]) {
     String input = args[0];
     String authSubKey = args[1];
-    String nonce = args[2];
     ArrayList<Byte> byteArray = new ArrayList<Byte>();
 
     while (input.length() > 0) {
@@ -28,7 +27,7 @@ class Main {
       iArr[i] = byteArray.get(i).byteValue();
     }
 
-    byte[] bArr = m25389a(new TrackerAuthCredentials(authSubKey, nonce), m24038b(iArr, 10));
+    byte[] bArr = m25389a(new TrackerAuthCredentials(authSubKey), m24038b(iArr, 10));
     System.out.println(m8324a(bArr));
   }
 
