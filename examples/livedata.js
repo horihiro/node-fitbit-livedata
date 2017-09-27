@@ -1,18 +1,15 @@
 const FitbitLiveData = require('..').default;
 
-const fitbit = new FitbitLiveData([{
-  trackerId: 'XX:XX:XX:XX:XX:XX',
-  auth: {
-    btleClientAuthCredentials: {
-      authSubKey: '0123456789ABCDEF0123456789ABCDEF', // [\dA-F]{32}
-      nonce: 900279863 // \d+
-    }
-  }
-}]);
+const fitbit = new FitbitLiveData({
+  username: 'FITBIT_COM_USER_NAME',
+  password: 'FITBIT_COM_PASSWORD'
+});
+
 fitbit.scan();
 fitbit.on('discover', (tracker) => {
   tracker.on('disconnect', (data) => {
     console.log('disconnect');
+    tracker.connect();    
   });
 
   tracker.on('connect', (data) => {
@@ -33,5 +30,5 @@ fitbit.on('discover', (tracker) => {
   tracker.on('data', (livedata) => {
     console.log(livedata);
   });
-  tracker.connect(true);
+  tracker.connect();
 });

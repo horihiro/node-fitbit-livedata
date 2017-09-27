@@ -1,10 +1,56 @@
 import EventEmitter from 'events';
 import { exec } from 'child_process';
 import path from 'path';
+import axios from 'axios';
+import qs from 'querystring';
 // import noble from 'noble';
 import debug from 'debug';
 // import TrackerAuthCredentials from './tracker-auth-credentials';
 import nobleWithGattServer from './gatt/server';
+
+axios.defaults.baseURL = 'https://android-cdn-api.fitbit.com';
+
+const generateBtleCredentials = (account) => {
+  return Promise.resolve().then(() => {
+    const params = qs.stringify({
+      username: account.username,
+      password: account.password,
+      scope: 'activity heartrate location nutrition profile settings sleep social weight mfa_ok',
+      grant_type: 'password'
+    });
+    const options = {
+      headers: {
+        Authorization: 'Basic MjI4VlNSOjQ1MDY4YTc2Mzc0MDRmYzc5OGEyMDhkNmMxZjI5ZTRm'
+      }
+    };
+    return axios.post('https://android-api.fitbit.com/oauth2/token', params, options);
+  }).then((res) => {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
+    return axios.get('/1.1/devices/types.json');
+  }).then((res) => {
+    return axios.get('/1/user/-/devices.json');
+  }).then((res) => {
+    const requests = res.data.map((device) => {
+      const serialNumber = device.wireId;
+      const address = device.mac.match(/.{2}/g).reverse().join(':');
+
+      const params = qs.stringify({
+        serialNumber: device.wireId
+      });
+      return axios.post('/1/user/-/devices/tracker/generateBtleClientAuthCredentials.json', params)
+        .then((res2) => {
+          return {
+            auth: res2.data,
+            serialNumber,
+            address
+          }
+        });
+    });
+    return Promise.all(requests);
+  }).then((res) => {
+    return Promise.resolve(res);
+  });
+};
 
 const execAsync = (cmd) => {
   return new Promise((resolve, reject) => {
@@ -272,40 +318,44 @@ export class Tracker extends EventEmitter {
 }
 
 export default class FitbitLiveData extends EventEmitter {
-  constructor(params) {
+  constructor(account) {
     super();
-    this.trackerInfos = params;
-    this.trackers = [];
+    this.account = account;
+    // this.trackerInfos = params;
+    // this.trackers = [];
   }
 
   scan() {
-    nobleWithGattServer.on('discover', (peripheral) => {
-      if (peripheral.address !== 'unknown') debug('tracker')(peripheral.address);
-      const trackers = this.trackerInfos.filter((info) => {
-        return info.trackerId === peripheral.address;
-      });
-      if (trackers.length === 1) {
-        console.log(`'${peripheral.address}' is discovered`);
-        trackers[0].tracker = new Tracker(peripheral, trackers[0].auth);
-        this.emit('discover', trackers[0].tracker);
-        if (this.trackerInfos.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
-        // connect(peripheral);
-      }
-    });
-    
-    if (nobleWithGattServer.state === 'poweredOn') {
-      debug('tracker')('already powered on.');
-      debug('tracker')('start scanning...');
-      nobleWithGattServer.startScanning();
-    } else {
-      nobleWithGattServer.on('stateChange', (state) => {
-        if (state === 'poweredOn') {
+    generateBtleCredentials(this.account)
+      .then((trackers) => {
+        console.log(trackers);
+        nobleWithGattServer.on('discover', (peripheral) => {
+          if (peripheral.address === 'unknown') return;
+          const target = trackers.filter((info) => {
+            return info.address.toLowerCase() === peripheral.address.toLowerCase();
+          });
+          if (target.length === 1) {
+            console.log(`'${peripheral.address}' is discovered`);
+            target[0].tracker = new Tracker(peripheral, target[0].auth);
+            this.emit('discover', target[0].tracker);
+            if (trackers.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
+            // connect(peripheral);
+          }
+        });
+        if (nobleWithGattServer.state === 'poweredOn') {
+          debug('tracker')('already powered on.');
           debug('tracker')('start scanning...');
           nobleWithGattServer.startScanning();
         } else {
-          nobleWithGattServer.stopScanning();
+          nobleWithGattServer.on('stateChange', (state) => {
+            if (state === 'poweredOn') {
+              debug('tracker')('start scanning...');
+              nobleWithGattServer.startScanning();
+            } else {
+              nobleWithGattServer.stopScanning();
+            }
+          });
         }
       });
-    }
   }
 }

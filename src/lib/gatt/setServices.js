@@ -11,7 +11,6 @@ export default function() {
     } else if (osRelease < 14) {
       throw new Error('Unsupported platform');
     } else {
-      console.log(yosemite);
       return yosemite;
     }
   } else if (platform === 'linux' || platform === 'freebsd' || platform === 'win32') {
