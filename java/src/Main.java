@@ -3,6 +3,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.spongycastle.crypto.BlockCipher;
+import org.spongycastle.crypto.engines.AESEngine;
 import org.spongycastle.crypto.engines.XTEAEngine;
 import org.spongycastle.crypto.macs.CMac;
 import org.spongycastle.crypto.params.KeyParameter;
@@ -12,6 +13,7 @@ class Main {
   public static void main(String args[]) {
     String input = args[0];
     String authSubKey = args[1];
+    String cryptType = args[2];
     ArrayList<Byte> byteArray = new ArrayList<Byte>();
 
     while (input.length() > 0) {
@@ -27,7 +29,7 @@ class Main {
       iArr[i] = byteArray.get(i).byteValue();
     }
 
-    byte[] bArr = m25389a(new TrackerAuthCredentials(authSubKey), m24038b(iArr, 10));
+    byte[] bArr = m25389a(new TrackerAuthCredentials(authSubKey, cryptType), m24038b(iArr, 10));
     System.out.println(m8324a(bArr));
   }
 
@@ -43,7 +45,7 @@ class Main {
     if (trackerAuthCredentials == null || trackerAuthCredentials.m25378c() == null || trackerAuthCredentials.m25378c().length != 16) {
         return null;
     }
-    eVar = new XTEAEngine();
+    eVar = trackerAuthCredentials.getAuthType().equals("AES") ? new AESEngine() : new XTEAEngine();
     CMac dVar = new CMac(eVar, 64);
     dVar.init(new KeyParameter(trackerAuthCredentials.m25378c()));
     ByteBuffer allocate = ByteBuffer.allocate(iArr.length * 4);

@@ -5,9 +5,11 @@ public final class TrackerAuthCredentials {
     public static final String f21167a = "TrackerAuthCredentials";
     private byte[] f21168b;
     private final String f21170d;
-
-    public TrackerAuthCredentials(String str) {
+    private final String authType;
+    
+    public TrackerAuthCredentials(String str, String str2) {
         this.f21170d = str;
+        this.authType = str2;
         m25375e();
     }
 
@@ -35,5 +37,9 @@ public final class TrackerAuthCredentials {
 
     public byte[] m25378c() {
         return this.f21168b;
+    }
+
+    public String getAuthType() {
+        return this.authType;
     }
 }
