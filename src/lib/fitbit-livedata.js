@@ -101,13 +101,13 @@ const unsubscribeAsync = (characteristic) => {
 const writeData = (requestCharacteristic, requestData, responseCharacteristic, condition) => {
   return new Promise((resolve, reject) => {
     const onNotify = function(responseData) {
-      debug('tracker')(`${new Date()}|${this.uuid} --> : (${responseData.length}) ${responseData.toString('hex')}`);
+      debug('tracker')(`HOST <-- ${this.uuid} '${responseData.toString('hex')}'`);
       if (condition(responseData)) resolve(responseData);
       else this.once('read', onNotify.bind(this));
     };
     responseCharacteristic.once('read', onNotify.bind(responseCharacteristic));
     requestCharacteristic.write(requestData, true, () => {
-      debug('tracker')(`${new Date()}|${requestCharacteristic.uuid} <-- : (${requestData.length}) ${requestData.toString('hex')}`);
+      debug('tracker')(`HOST --> ${requestCharacteristic.uuid} '${requestData.toString('hex')}'`);
     });
   });
 };
@@ -147,7 +147,7 @@ export class Tracker extends EventEmitter {
       );
     })
     .then((data) => {
-      console.log(`${data.characteristics.length} characteristics are found`);
+      debug('tracker')(`${data.characteristics.length} characteristics are found`);
       return Promise.all(
         data.characteristics.map((ch) => discoverDescriptorsAsync(ch))
       ).then(() => data.characteristics);
@@ -278,44 +278,46 @@ export class Tracker extends EventEmitter {
 }
 
 export default class FitbitLiveData extends EventEmitter {
-  constructor(account) {
-    super();
+  login(account) {
     this.account = account;
-    // this.trackerInfos = params;
-    // this.trackers = [];
+    generateBtleCredentials(this.account)
+      .then((trackers) => {
+        debug('tracker')('login succeeded');
+        this.trackers = trackers;
+        this.emit('authenticated');
+      })
+      .catch((err) => {
+        process.stderr.write('login failed\n');
+        process.exit(1);
+      });
   }
 
   scan() {
-    generateBtleCredentials(this.account)
-      .then((trackers) => {
-        nobleWithGattServer.on('discover', (peripheral) => {
-          if (peripheral.address === 'unknown') return;
-          const target = trackers.filter((info) => {
-            return info.address.toLowerCase() === peripheral.address.toLowerCase();
-          });
-          if (target.length === 1) {
-            console.log(`'${peripheral.address}' is discovered`);
-            console.log(target[0].auth);
-            target[0].tracker = new Tracker(peripheral, target[0].auth);
-            this.emit('discover', target[0].tracker);
-            if (trackers.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
-            // connect(peripheral);
-          }
-        });
-        if (nobleWithGattServer.state === 'poweredOn') {
-          debug('tracker')('already powered on.');
+    nobleWithGattServer.on('discover', (peripheral) => {
+      if (peripheral.address === 'unknown') return;
+      const target = this.trackers.filter((info) => {
+        return info.address.toLowerCase() === peripheral.address.toLowerCase();
+      });
+      if (target.length === 1) {
+        debug('tracker')(`'${peripheral.address}' is discovered`);
+        target[0].tracker = new Tracker(peripheral, target[0].auth);
+        this.emit('discover', target[0].tracker);
+        if (this.trackers.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
+      }
+    });
+    if (nobleWithGattServer.state === 'poweredOn') {
+      debug('tracker')('already powered on.');
+      debug('tracker')('start scanning...');
+      nobleWithGattServer.startScanning();
+    } else {
+      nobleWithGattServer.on('stateChange', (state) => {
+        if (state === 'poweredOn') {
           debug('tracker')('start scanning...');
           nobleWithGattServer.startScanning();
         } else {
-          nobleWithGattServer.on('stateChange', (state) => {
-            if (state === 'poweredOn') {
-              debug('tracker')('start scanning...');
-              nobleWithGattServer.startScanning();
-            } else {
-              nobleWithGattServer.stopScanning();
-            }
-          });
+          nobleWithGattServer.stopScanning();
         }
       });
+    }
   }
 }
