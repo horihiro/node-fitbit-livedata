@@ -1,0 +1,57 @@
+sequenceDiagram
+# https://mermaidjs.github.io/mermaid-live-editor/
+
+participant Host
+participant Host Notify
+participant API Server
+participant Tracker
+participant Tracker Control
+participant Tracker Notify
+participant Tracker LiveData
+
+Note over Tracker,Tracker LiveData: Same Divice
+Note over Host,Host Notify: Same Divice
+
+Tracker->>Tracker LiveData:launch
+activate Tracker LiveData
+Tracker->>Tracker Notify:launch
+activate Tracker Notify
+
+Host->>API Server:Request OAuth2 Token
+API Server-->>Host:OAuth2 Token
+Host->>API Server:Request Tracker Info
+API Server-->>Host:Tracker Info
+
+# loop Every Tracker
+  Host->>API Server:Request Authentication Info
+  API Server-->>Host:Authentication Info
+# end
+
+Host->>Host Notify:launch
+activate Host Notify
+
+Host-xTracker Notify:Subscribe
+Tracker-xHost Notify:Subscribe
+
+Host-xTracker Control:write 'OPEN_SESSION'
+Tracker Notify--xHost:'OK'
+
+Host-xTracker Control:write 'AUTH_TRACKER'
+Tracker Notify--xHost:'OK'
+
+Host-xTracker Control:write 'SEND_AUTH'
+Tracker Notify--xHost:'OK'
+
+Host-xTracker Notify:Unsubscribe
+Host-xTracker LiveData:Subscribe
+
+Tracker LiveData--xHost:LiveData
+Tracker LiveData--xHost:LiveData
+Tracker LiveData--xHost:LiveData
+Host-xTracker Control:write 'CLOSE_SESSION'
+Tracker LiveData--xHost:LiveData
+Tracker LiveData--xHost:LiveData
+
+deactivate Tracker LiveData
+deactivate Tracker Notify
+deactivate Host Notify
