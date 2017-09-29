@@ -59,7 +59,5 @@ export default (account) => {
         });
     });
     return Promise.all(requests);
-  }).catch((ex) => {
-    console.log(ex);
   });
 };
