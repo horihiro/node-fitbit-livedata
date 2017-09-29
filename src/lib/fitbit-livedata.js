@@ -6,51 +6,10 @@ import qs from 'querystring';
 // import noble from 'noble';
 import debug from 'debug';
 // import TrackerAuthCredentials from './tracker-auth-credentials';
+import generateBtleCredentials from './generateBtleCredentials';
 import nobleWithGattServer from './gatt/server';
 
 axios.defaults.baseURL = 'https://android-cdn-api.fitbit.com';
-
-const generateBtleCredentials = (account) => {
-  return Promise.resolve().then(() => {
-    const params = qs.stringify({
-      username: account.username,
-      password: account.password,
-      scope: 'activity heartrate location nutrition profile settings sleep social weight mfa_ok',
-      grant_type: 'password'
-    });
-    const options = {
-      headers: {
-        Authorization: 'Basic MjI4VlNSOjQ1MDY4YTc2Mzc0MDRmYzc5OGEyMDhkNmMxZjI5ZTRm'
-      }
-    };
-    return axios.post('https://android-api.fitbit.com/oauth2/token', params, options);
-  }).then((res) => {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
-    return axios.get('/1.1/devices/types.json');
-  }).then((res) => {
-    return axios.get('/1/user/-/devices.json');
-  }).then((res) => {
-    const requests = res.data.map((device) => {
-      const serialNumber = device.wireId;
-      const address = device.mac.match(/.{2}/g).reverse().join(':');
-
-      const params = qs.stringify({
-        serialNumber: device.wireId
-      });
-      return axios.post('/1/user/-/devices/tracker/generateBtleClientAuthCredentials.json', params)
-        .then((res2) => {
-          return {
-            auth: res2.data,
-            serialNumber,
-            address
-          }
-        });
-    });
-    return Promise.all(requests);
-  }).then((res) => {
-    return Promise.resolve(res);
-  });
-};
 
 const execAsync = (cmd) => {
   return new Promise((resolve, reject) => {
@@ -247,8 +206,9 @@ export class Tracker extends EventEmitter {
         .then((data) => {
           const nonce = this.auth.btleClientAuthCredentials.nonce;
           const authSubKey = this.auth.btleClientAuthCredentials.authSubKey;
+          const authType = this.auth.type || '';
           const binPath = path.join(__dirname, '../../bin');
-          return execAsync(`java -cp "${binPath}/*" Main ${data.toString('hex')} ${authSubKey}`)
+          return execAsync(`java -cp "${binPath}/*" Main ${data.toString('hex')} ${authSubKey} ${authType}`)
             .then((res) => {
               const bytes = res.stdout.match(/.{2}/g).map((seg) => {
                 return parseInt(seg, 16);
@@ -289,7 +249,7 @@ export class Tracker extends EventEmitter {
             // time     steps    distanse calories elevation veryActive heartRate heartrate
             const time = new Date(arrange4Bytes(data, 0) * 1000);
             const steps = arrange4Bytes(data, 4);
-            const distanse = arrange4Bytes(data, 8);
+            const distance = arrange4Bytes(data, 8);
             const calories = arrange2Bytes(data, 12);
             const elevation = arrange2Bytes(data, 14) / 10;
             const veryActive = arrange2Bytes(data, 16);
@@ -297,7 +257,7 @@ export class Tracker extends EventEmitter {
             this.emit('data', {
               time,
               steps,
-              distanse,
+              distance,
               calories,
               elevation,
               veryActive,
@@ -328,7 +288,6 @@ export default class FitbitLiveData extends EventEmitter {
   scan() {
     generateBtleCredentials(this.account)
       .then((trackers) => {
-        console.log(trackers);
         nobleWithGattServer.on('discover', (peripheral) => {
           if (peripheral.address === 'unknown') return;
           const target = trackers.filter((info) => {
@@ -336,6 +295,7 @@ export default class FitbitLiveData extends EventEmitter {
           });
           if (target.length === 1) {
             console.log(`'${peripheral.address}' is discovered`);
+            console.log(target[0].auth);
             target[0].tracker = new Tracker(peripheral, target[0].auth);
             this.emit('discover', target[0].tracker);
             if (trackers.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
