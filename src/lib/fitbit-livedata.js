@@ -120,10 +120,10 @@ const arrange2Bytes = (bytes, from) => {
 };
 
 export class Tracker extends EventEmitter {
-  constructor(peripheral, auth) {
+  constructor(peripheral, params) {
     super();
     this.peripheral = peripheral;
-    this.auth = auth;
+    this.params = params;
   }
 
   disconnect(forceReconnect) {
@@ -185,7 +185,7 @@ export class Tracker extends EventEmitter {
           const getRandomInt = (min, max) => {
             return Math.floor( Math.random() * (max - min + 1) ) + min;
           };
-          const nonce = this.auth.btleClientAuthCredentials.nonce;
+          const nonce = this.params.auth.btleClientAuthCredentials.nonce;
           data.push(getRandomInt(0x00, 0xff));
           data.push(getRandomInt(0x00, 0xff));
           data.push(getRandomInt(0x00, 0xff));
@@ -204,9 +204,9 @@ export class Tracker extends EventEmitter {
           )
         })
         .then((data) => {
-          const nonce = this.auth.btleClientAuthCredentials.nonce;
-          const authSubKey = this.auth.btleClientAuthCredentials.authSubKey;
-          const authType = this.auth.type || '';
+          const nonce = this.params.auth.btleClientAuthCredentials.nonce;
+          const authSubKey = this.params.auth.btleClientAuthCredentials.authSubKey;
+          const authType = this.params.auth.type || '';
           const binPath = path.join(__dirname, '../../bin');
           return execAsync(`java -cp "${binPath}/*" Main ${data.toString('hex')} ${authSubKey} ${authType}`)
             .then((res) => {
@@ -255,22 +255,29 @@ export class Tracker extends EventEmitter {
             const veryActive = arrange2Bytes(data, 16);
             const heartRate = data[18] & 255;
             this.emit('data', {
-              time,
-              steps,
-              distance,
-              calories,
-              elevation,
-              veryActive,
-              heartRate,
+              device: {
+                name: this.params.name,
+                address: this.params.address,
+                serialNumber: this.params.serialNumber
+              },
+              livedata: {
+                time,
+                steps,
+                distance,
+                calories,
+                elevation,
+                veryActive,
+                heartRate,
+              }
             })
-            // debug('tracker')(`${new Date()}|${this.uuid} --> : (${data.length}) ${data.toString('hex')}`);
-            // debug('tracker')(` time       : ${time}`);
-            // debug('tracker')(` steps      : ${steps}`);
-            // debug('tracker')(` distanse   : ${distanse}`);
-            // debug('tracker')(` calories   : ${calories}`);
-            // debug('tracker')(` elevation  : ${elevation}`);
-            // debug('tracker')(` veryActive : ${veryActive}`);
-            // debug('tracker')(` heartRate  : ${heartRate}`);
+            debug('livedata')(` params     : ${(this.params)}`);
+            debug('livedata')(` time       : ${time}`);
+            debug('livedata')(` steps      : ${steps}`);
+            debug('livedata')(` distanse   : ${distance}`);
+            debug('livedata')(` calories   : ${calories}`);
+            debug('livedata')(` elevation  : ${elevation}`);
+            debug('livedata')(` veryActive : ${veryActive}`);
+            debug('livedata')(` heartRate  : ${heartRate}`);
           })
         });
     });
@@ -287,8 +294,8 @@ export default class FitbitLiveData extends EventEmitter {
         this.emit('authenticated');
       })
       .catch((err) => {
-        process.stderr.write('login failed\n');
-        process.exit(1);
+        debug('tracker')('login failed');
+        this.emit('error', 'login_failed');
       });
   }
 
@@ -300,7 +307,7 @@ export default class FitbitLiveData extends EventEmitter {
       });
       if (target.length === 1) {
         debug('tracker')(`'${peripheral.address}' is discovered`);
-        target[0].tracker = new Tracker(peripheral, target[0].auth);
+        target[0].tracker = new Tracker(peripheral, target[0]);
         this.emit('discover', target[0].tracker);
         if (this.trackers.filter((info) => {return !info.tracker;}).length === 0) nobleWithGattServer.stopScanning();
       }

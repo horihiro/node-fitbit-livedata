@@ -4,6 +4,7 @@ import stream from 'stream';
 import program from 'commander';
 import debug from 'debug';
 import FitbitLiveData from '..';
+import pkg from '../../package.json';
 
 const mutableStdout = new stream.Writable({
   write: function(chunk, encoding, callback) {
@@ -20,7 +21,7 @@ const rl = readline.createInterface({
 });
 
 program
-  .version('0.0.1')
+  .version(pkg.version)
   .option('-u, --username [value]', 'username')
   .option('-p, --password [value]', 'password')
   .parse(process.argv);
@@ -54,6 +55,10 @@ Promise.resolve()
     
     fitbit.on('authenticated', () => {
       fitbit.scan();
+    });
+    fitbit.on('error', (err) => {
+      process.stderr.write(`${err}\n`);
+      process.exit(1);
     })
     fitbit.on('discover', (tracker) => {
       tracker.on('disconnect', (data) => {
