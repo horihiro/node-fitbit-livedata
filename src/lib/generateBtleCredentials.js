@@ -52,6 +52,7 @@ export default (account) => {
           }
 
           return {
+            name: metadata[0].name,
             auth,
             serialNumber,
             address
