@@ -354,11 +354,11 @@ export default class FitbitLiveData extends EventEmitter {
       noble.startScanning();
 
       if (bleno.state === 'poweredOn') {
-        bleno.setServices(primaryService);
+        bleno.setServices([primaryService]);
       } else {
         bleno.on('stateChange', (state) => {
           if (state === 'poweredOn') {
-            bleno.setServices(primaryService);
+            bleno.setServices([primaryService]);
           }
         });
       }
@@ -369,11 +369,11 @@ export default class FitbitLiveData extends EventEmitter {
           noble.startScanning();
 
           if (bleno.state === 'poweredOn') {
-            bleno.setServices(primaryService);
+            bleno.setServices([primaryService]);
           } else {
             bleno.on('stateChange', (state) => {
               if (state === 'poweredOn') {
-                bleno.setServices(primaryService);
+                bleno.setServices([primaryService]);
               }
             });
           }
