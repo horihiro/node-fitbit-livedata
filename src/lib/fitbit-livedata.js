@@ -123,7 +123,7 @@ const arrange2Bytes = (bytes, from) => {
 const UUID_SERVICE_NOTIFICATION_CENTER = '16bcfd00-253f-c348-e831-0db3e334d580';
 const UUID_CHARACTERISTICS_NOTIFICATION_SOURCE = '16bcfd02-253f-c348-e831-0db3e334d580';
 
-const primaryService = new bleno.PrimaryService([{
+const primaryService = new bleno.PrimaryService({
     uuid: UUID_SERVICE_NOTIFICATION_CENTER, // or 'fff0' for 16-bit
     characteristics: [
       new bleno.Characteristic({
@@ -133,27 +133,15 @@ const primaryService = new bleno.PrimaryService([{
         value: null,
         descriptors: [
         ],
-        onReadRequest: (offset, callback) => {
-          debug('tracker')(`onReadRequest: ${this.uuid}`);
-        }, 
-        onWriteRequest: (data, offset, withoutResponse, callback) => {
-          debug('tracker')(`onWriteRequest: ${this.uuid}`);
-        },
-        onSubscribe: (maxValueSize, updateValueCallback) => {
-          debug('tracker')(`onSubscribe: ${this.uuid}`);
-        },
-        onUnsubscribe: () => {
-          debug('tracker')(`onUnsubscribe: ${this.uuid}`);
-        },
-        onNotify: () => {
-          debug('tracker')(`onNotify: ${this.uuid}`);
-        },
-        onIndicate: () => {
-          debug('tracker')(`onIndicate: ${this.uuid}`);
-        }
+        onReadRequest: null, 
+        onWriteRequest: null,
+        onSubscribe: null,
+        onUnsubscribe: null,
+        onNotify: null,
+        onIndicate: null
       }),
     ]
-}]);
+});
 
 export class Tracker extends EventEmitter {
   constructor(peripheral, params) {
@@ -348,36 +336,25 @@ export default class FitbitLiveData extends EventEmitter {
         if (this.trackers.filter((info) => {return !info.tracker;}).length === 0) noble.stopScanning();
       }
     });
+    if (bleno.state === 'poweredOn') {
+      bleno.setServices([primaryService]);
+    } else {
+      bleno.on('stateChange', (state) => {
+        if (state === 'poweredOn') {
+          bleno.setServices([primaryService]);
+        }
+      });
+    }
     if (noble.state === 'poweredOn') {
       debug('tracker')('already powered on.');
       debug('tracker')('start scanning...');
       noble.startScanning();
-
-      if (bleno.state === 'poweredOn') {
-        bleno.setServices([primaryService]);
-      } else {
-        bleno.on('stateChange', (state) => {
-          if (state === 'poweredOn') {
-            bleno.setServices([primaryService]);
-          }
-        });
-      }
     } else {
       noble.on('stateChange', (state) => {
         if (state === 'poweredOn') {
           debug('tracker')('start scanning...');
           noble.startScanning();
-
-          if (bleno.state === 'poweredOn') {
-            bleno.setServices([primaryService]);
-          } else {
-            bleno.on('stateChange', (state) => {
-              if (state === 'poweredOn') {
-                bleno.setServices([primaryService]);
-              }
-            });
-          }
-            } else {
+        } else {
           noble.stopScanning();
         }
       });
