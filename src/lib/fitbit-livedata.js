@@ -309,16 +309,16 @@ export class Tracker extends EventEmitter {
 }
 
 export default class FitbitLiveData extends EventEmitter {
-  login(account) {
-    this.account = account;
-    generateBtleCredentials(this.account)
+  login(authinfos) {
+    this.authinfos = authinfos;
+    generateBtleCredentials(this.authinfos)
       .then((trackers) => {
         debug('tracker')('login succeeded');
         this.trackers = trackers;
         this.emit('authenticated');
       })
       .catch((err) => {
-        debug('tracker')('login failed');
+        debug('tracker')(err);
         this.emit('error', 'login_failed');
       });
   }
