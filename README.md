@@ -4,7 +4,7 @@ This project aims to getting `livedata` from Fitbit tracker
 ## !!! CAUTION !!!
 This is an **UNOFFICIAL** and **EXPERIMENTAL** module.
 
-Using this module sometimes forcibly logs out from fitbit application on your mobile device.
+Using this module sometimes forcibly logs out from fitbit application on your mobile device.
 
 ## Requirement
 - Host Machine
