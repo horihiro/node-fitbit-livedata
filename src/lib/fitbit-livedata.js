@@ -330,9 +330,9 @@ export default class FitbitLiveData extends EventEmitter {
       }
     });
     gattServer.on('error', (error) => {
+      process.stderr.write(`${error}\n`);
       process.exit(1);
     });
     gattServer.launch();
-      
   }
 }
