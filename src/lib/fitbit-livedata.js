@@ -3,12 +3,11 @@ import { exec } from 'child_process';
 import path from 'path';
 import axios from 'axios';
 import qs from 'querystring';
-import bleno from 'bleno';
 import noble from 'noble';
 import debug from 'debug';
 // import TrackerAuthCredentials from './tracker-auth-credentials';
 import generateBtleCredentials from './generateBtleCredentials';
-// import noble from './gatt/server';
+import GattServer from './gatt/server';
 
 axios.defaults.baseURL = 'https://android-cdn-api.fitbit.com';
 
@@ -119,29 +118,6 @@ const arrange4Bytes = (bytes, from) => {
 const arrange2Bytes = (bytes, from) => {
   return bytes[from + 1] << 8 | bytes[from];
 };
-
-const UUID_SERVICE_NOTIFICATION_CENTER = '16bcfd00-253f-c348-e831-0db3e334d580';
-const UUID_CHARACTERISTICS_NOTIFICATION_SOURCE = '16bcfd02-253f-c348-e831-0db3e334d580';
-
-const primaryService = new bleno.PrimaryService({
-    uuid: UUID_SERVICE_NOTIFICATION_CENTER, // or 'fff0' for 16-bit
-    characteristics: [
-      new bleno.Characteristic({
-        uuid: UUID_CHARACTERISTICS_NOTIFICATION_SOURCE,
-        properties: [ 'notify' ],
-        secure: [],
-        value: null,
-        descriptors: [
-        ],
-        onReadRequest: null, 
-        onWriteRequest: null,
-        onSubscribe: null,
-        onUnsubscribe: null,
-        onNotify: null,
-        onIndicate: null
-      }),
-    ]
-});
 
 export class Tracker extends EventEmitter {
   constructor(peripheral, params) {
@@ -336,28 +312,27 @@ export default class FitbitLiveData extends EventEmitter {
         if (this.trackers.filter((info) => {return !info.tracker;}).length === 0) noble.stopScanning();
       }
     });
-    if (bleno.state === 'poweredOn') {
-      bleno.setServices([primaryService]);
-    } else {
-      bleno.on('stateChange', (state) => {
-        if (state === 'poweredOn') {
-          bleno.setServices([primaryService]);
-        }
-      });
-    }
-    if (noble.state === 'poweredOn') {
-      debug('tracker')('already powered on.');
-      debug('tracker')('start scanning...');
-      noble.startScanning();
-    } else {
-      noble.on('stateChange', (state) => {
-        if (state === 'poweredOn') {
-          debug('tracker')('start scanning...');
-          noble.startScanning();
-        } else {
-          noble.stopScanning();
-        }
-      });
-    }
+    const gattServer = new GattServer();
+    gattServer.on('complete', () => {
+      if (noble.state === 'poweredOn') {
+        debug('tracker')('already powered on.');
+        debug('tracker')('start scanning...');
+        noble.startScanning();
+      } else {
+        noble.on('stateChange', (state) => {
+          if (state === 'poweredOn') {
+            debug('tracker')('start scanning...');
+            noble.startScanning();
+          } else {
+            noble.stopScanning();
+          }
+        });
+      }
+    });
+    gattServer.on('error', (error) => {
+      process.exit(1);
+    });
+    gattServer.launch();
+      
   }
 }
