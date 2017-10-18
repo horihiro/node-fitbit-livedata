@@ -20,7 +20,7 @@ This moudle is not published on npm yet.
 So you have to clone this project at first.
 
 ```
-$ git clone https://github.com/horihiro/node-fitbit-livedata
+$ git clone https://github.com/horihiro/node-fitbit-livedata.git
 $ cd node-fitbit-livedata
 ```
 
