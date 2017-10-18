@@ -41,7 +41,7 @@ $ npm i . -g
 ### Usage as library
 
 ```javascript
-import FitbitLiveData from 'node-fitbit-livedata';
+import FitbitLiveData from 'fitbit-livedata';
 const fitbit = new FitbitLiveData();
 
 fitbit.on('authenticated', () => {
