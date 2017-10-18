@@ -9,6 +9,8 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
 ## Requirement
 - Host Machine
     - macOS
+- Runtime
+    - node.js
 - Fitbit Account
 - Fitbit Tracker(Device) registered in the above account
     - Charge HR
@@ -84,8 +86,8 @@ fitbit.login([
     password: fitbitUser1_Password
   },
   {
-  username: fitbitUser2_Username,
-  password: fitbitUser2_Password
+    username: fitbitUser2_Username,
+    password: fitbitUser2_Password
   },
 //  :
 ]);
@@ -103,3 +105,5 @@ $ fitbit-livedata -u <USERNAME> -p <PASSWORD>
 ## Memo
 ### Sequence Diagram between host, tracker and fitbit.com
 ![sequence.png](./sequence.png)
+
+[Japanese memo on Qiita](https://qiita.com/horihiro/items/03c4bef3e71539eddaad)
