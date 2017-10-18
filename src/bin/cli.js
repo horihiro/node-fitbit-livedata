@@ -34,7 +34,7 @@ program
 
 const fitbit = new FitbitLiveData();
 
-fitbit.on('authenticated', () => {
+fitbit.on('success', () => {
   fitbit.scan();
 });
 fitbit.on('error', (err) => {

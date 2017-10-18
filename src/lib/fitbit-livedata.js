@@ -291,7 +291,9 @@ export default class FitbitLiveData extends EventEmitter {
       .then((trackers) => {
         debug('tracker')('login succeeded');
         this.trackers = trackers;
-        this.emit('authenticated');
+        const infos = trackers.map(tracker => ({name: tracker.name, address: tracker.address}));
+        debug('tracker')(`available trackers: ${infos}`);
+        this.emit('success', infos);
       })
       .catch((err) => {
         debug('tracker')(err);
@@ -313,7 +315,7 @@ export default class FitbitLiveData extends EventEmitter {
       }
     });
     const gattServer = new GattServer();
-    gattServer.on('complete', () => {
+    gattServer.on('listen', () => {
       if (noble.state === 'poweredOn') {
         debug('tracker')('already powered on.');
         debug('tracker')('start scanning...');
@@ -332,7 +334,6 @@ export default class FitbitLiveData extends EventEmitter {
     gattServer.on('error', (error) => {
       process.exit(1);
     });
-    gattServer.launch();
-      
+    gattServer.listen();
   }
 }
