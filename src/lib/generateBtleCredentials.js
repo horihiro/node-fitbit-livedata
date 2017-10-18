@@ -23,7 +23,6 @@ export default (accounts) => {
       const queries = {
         scope: SCOPE
       };
-      console.log(account);
       if (account.username && account.password) {
         queries.username = account.username;
         queries.password = account.password;
