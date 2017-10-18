@@ -99,3 +99,7 @@ $ fitbit-livedata -u <USERNAME> -p <PASSWORD>
 {"device":{"name":"Charge HR","address":"XX:XX:XX:XX:XX:XX","serialNumber":"0123456789ab"},"livedata":{"time":"YYYY-MM-DDThh:mm:dd.sssZ","steps":5700,"distance":4024236,"calories":1220,"elevation":13,"veryActive":2,"heartRate":82}}
  :
 ```
+
+## Memo
+### Sequence Diagram between host, tracker and fitbit.com
+![sequence.png](./sequence.png)
