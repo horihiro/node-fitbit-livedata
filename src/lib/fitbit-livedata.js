@@ -135,11 +135,11 @@ export class Tracker extends EventEmitter {
     this.forceReconnect = forceReconnect;
     this.peripheral.once('disconnect', () => {
       if (this.forceReconnect) this.connect(true);
-      this.listenerCount('disconnect') > 0 && this.emit('disconnect');
+      this.emit('disconnect');
     })
     return connectAsync(this.peripheral)
     .then(() => {
-      this.listenerCount('connect') > 0 && this.emit('connect');                
+      this.emit('connect');                
       return discoverSomeServicesAndCharacteristicsAsync(
         this.peripheral,
         serviceUuids.map(e => e.replace(/-/g, '')),
@@ -168,7 +168,7 @@ export class Tracker extends EventEmitter {
       return subscribeAsync(control)
         .then(() => {
           // send message 'OPEN_SESSION'
-          this.listenerCount('openSession') > 0 && this.emit('openSession');
+          this.emit('openSession');
           return writeData(
             writable,
             new Buffer([0xc0,0x0a,0x0a,0x00,0x08,0x00,0x10,0x00,0x00,0x00,0xc8,0x00,0x01]),
@@ -179,8 +179,8 @@ export class Tracker extends EventEmitter {
           );
         })
         .then(() => {
-          this.listenerCount('authenticate') > 0 && this.emit('authenticate');                
           // send message 'Command.AUTH_TRACKER'
+          this.emit('authenticate');
           const data = [0xc0, 0x50];
           const getRandomInt = (min, max) => {
             return Math.floor( Math.random() * (max - min + 1) ) + min;
@@ -214,7 +214,7 @@ export class Tracker extends EventEmitter {
                 return parseInt(seg, 16);
               });
               // send message 'Command.SEND_AUTH'
-              this.listenerCount('sendAuth') > 0 && this.emit('sendAuth');                
+              this.emit('sendAuth');                
               return writeData(
                 writable,
                 new Buffer(bytes),
@@ -227,7 +227,7 @@ export class Tracker extends EventEmitter {
         })
         .then((data) => {
           // send message 'CLOSE_SESSION'
-          this.listenerCount('authenticated') > 0 && this.emit('authenticated');                
+          this.emit('authenticated');                
           return writeData(
             writable,
             new Buffer([0xc0, 0x01]),
@@ -254,7 +254,7 @@ export class Tracker extends EventEmitter {
             const elevation = arrange2Bytes(data, 14) / 10;
             const veryActive = arrange2Bytes(data, 16);
             const heartRate = data[18] & 255;
-            this.listenerCount('data') > 0 && this.emit('data', {
+            this.emit('data', {
               device: {
                 name: this.params.name,
                 address: this.params.address,
@@ -296,11 +296,11 @@ export default class FitbitLiveData extends EventEmitter {
         this.trackers = this.trackers.concat(trackers);
         const infos = trackers.map(tracker => ({name: tracker.name, address: tracker.address}));
         debug('tracker')(`available trackers: ${infos}`);
-        this.listenerCount('success') > 0 && this.emit('success', infos);
+        this.emit('success', infos);
       })
       .catch((err) => {
         debug('tracker')(err);
-        this.listenerCount('fail') > 0 && this.emit('fail', 'login_failed');
+        this.emit('fail', 'login_failed');
       });
   }
 
@@ -322,7 +322,7 @@ export default class FitbitLiveData extends EventEmitter {
       });
     })();
     if (this.trackers.length === 0) {
-      this.listenerCount('error') > 0 && this.emit('error', 'no available trackers');
+      this.emit('error', 'no available trackers');
       return;
     }
     noble.on('discover', (peripheral) => {
@@ -333,7 +333,7 @@ export default class FitbitLiveData extends EventEmitter {
       if (target.length === 1) {
         debug('tracker')(`'${peripheral.address}' is discovered`);
         target[0].tracker = new Tracker(peripheral, target[0]);
-        this.listenerCount('discover') > 0 && this.emit('discover', target[0].tracker);
+        this.emit('discover', target[0].tracker);
         if (this.trackers.filter((info) => {return !info.tracker;}).length === 0) noble.stopScanning();
       }
     });
