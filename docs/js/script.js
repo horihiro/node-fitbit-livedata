@@ -11,8 +11,8 @@
   qs.some(function(query) {
     if (qs.name === 'code') {
       document.querySelector('#code').innerHTML = qs.value;
-      return false;
+      return true;
     }
-    return true;
+    return false;
   });
 })();
