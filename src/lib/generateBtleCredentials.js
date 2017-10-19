@@ -6,7 +6,7 @@ axios.defaults.baseURL = 'https://android-cdn-api.fitbit.com';
 const SCOPE = '';//activity heartrate location nutrition profile settings sleep social weight mfa_ok';
 const GRANT_TYPE_AUTHCODE = 'authorization_code';
 const GRANT_TYPE_PASSWORD = 'password';
-const REDIRECT_URI = 'https://localhost/';
+const REDIRECT_URI = 'https://horihiro.github.io/node-fitbit-livedata/';
 const AUTHORIZATION = 'Basic MjI4VlNSOjQ1MDY4YTc2Mzc0MDRmYzc5OGEyMDhkNmMxZjI5ZTRm';
 
 const URL_OAUTH = 'https://android-api.fitbit.com/oauth2/token';
@@ -23,7 +23,6 @@ export default (accounts) => {
       const queries = {
         scope: SCOPE
       };
-      console.log(account);
       if (account.username && account.password) {
         queries.username = account.username;
         queries.password = account.password;

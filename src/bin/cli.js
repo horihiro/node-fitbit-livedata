@@ -34,17 +34,10 @@ program
 
 const fitbit = new FitbitLiveData();
 
-fitbit.on('authenticated', () => {
-  fitbit.scan();
-});
-fitbit.on('error', (err) => {
-  process.stderr.write(`${err}\n`);
-  process.exit(1);
-})
 fitbit.on('discover', (tracker) => {
   tracker.on('disconnect', (data) => {
     debug('tracker')('disconnect');
-    tracker.connect();    
+    tracker.connect();
   });
 
   tracker.on('connect', (data) => {
@@ -67,6 +60,12 @@ fitbit.on('discover', (tracker) => {
   });
   tracker.connect();
 });
+
+fitbit.on('error', (error) => {
+  process.stderr.write(`${error}\n`);
+  process.exit(1);
+});
+
 Promise.resolve().then(() => {
   if (program.authcodes.length > 0) {
     const firstCode = program.rawArgs.indexOf(program.authcodes[0]);
@@ -109,8 +108,33 @@ Promise.resolve().then(() => {
     }
   })
   .then((authCodes) => {
-    fitbit.login(authCodes ? authCodes : [{
+    const authInfos = authCodes ? authCodes : [{
       username: program.username,
       password: program.password
-    }]);
+    }];
+    const trackers = [];
+
+    authInfos.reduce((prev, curr, index, array) => {
+      return prev.then(() => {
+        return new Promise((resolve, reject) => {
+          fitbit.once('success', (trackersInfo) => {
+            trackersInfo.forEach((trackerInfo) => {
+              trackers.push(trackerInfo);
+            });
+            resolve(trackersInfo);
+            fitbit.removeAllListeners('success');
+            fitbit.removeAllListeners('fail');
+          });
+          fitbit.once('fail', (err) => {
+            process.stderr.write(`logging in as ${curr.name || curr.authCode} is failed.\n`);
+            resolve();
+            fitbit.removeAllListeners('success');
+            fitbit.removeAllListeners('fail');
+          });
+          fitbit.addAccount(curr);
+        });
+      });
+    }, Promise.resolve()).then(() => {
+      fitbit.scanTrackers();
+    });
   });

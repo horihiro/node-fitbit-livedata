@@ -135,11 +135,11 @@ export class Tracker extends EventEmitter {
     this.forceReconnect = forceReconnect;
     this.peripheral.once('disconnect', () => {
       if (this.forceReconnect) this.connect(true);
-      this.emit('disconnect');
+      this.listenerCount('disconnect') > 0 && this.emit('disconnect');
     })
     return connectAsync(this.peripheral)
     .then(() => {
-      this.emit('connect');                
+      this.listenerCount('connect') > 0 && this.emit('connect');                
       return discoverSomeServicesAndCharacteristicsAsync(
         this.peripheral,
         serviceUuids.map(e => e.replace(/-/g, '')),
@@ -168,7 +168,7 @@ export class Tracker extends EventEmitter {
       return subscribeAsync(control)
         .then(() => {
           // send message 'OPEN_SESSION'
-          this.emit('openSession');
+          this.listenerCount('openSession') > 0 && this.emit('openSession');
           return writeData(
             writable,
             new Buffer([0xc0,0x0a,0x0a,0x00,0x08,0x00,0x10,0x00,0x00,0x00,0xc8,0x00,0x01]),
@@ -179,7 +179,7 @@ export class Tracker extends EventEmitter {
           );
         })
         .then(() => {
-          this.emit('authenticate');                
+          this.listenerCount('authenticate') > 0 && this.emit('authenticate');                
           // send message 'Command.AUTH_TRACKER'
           const data = [0xc0, 0x50];
           const getRandomInt = (min, max) => {
@@ -214,7 +214,7 @@ export class Tracker extends EventEmitter {
                 return parseInt(seg, 16);
               });
               // send message 'Command.SEND_AUTH'
-              this.emit('sendAuth');                
+              this.listenerCount('sendAuth') > 0 && this.emit('sendAuth');                
               return writeData(
                 writable,
                 new Buffer(bytes),
@@ -227,7 +227,7 @@ export class Tracker extends EventEmitter {
         })
         .then((data) => {
           // send message 'CLOSE_SESSION'
-          this.emit('authenticated');                
+          this.listenerCount('authenticated') > 0 && this.emit('authenticated');                
           return writeData(
             writable,
             new Buffer([0xc0, 0x01]),
@@ -254,7 +254,7 @@ export class Tracker extends EventEmitter {
             const elevation = arrange2Bytes(data, 14) / 10;
             const veryActive = arrange2Bytes(data, 16);
             const heartRate = data[18] & 255;
-            this.emit('data', {
+            this.listenerCount('data') > 0 && this.emit('data', {
               device: {
                 name: this.params.name,
                 address: this.params.address,
@@ -285,21 +285,46 @@ export class Tracker extends EventEmitter {
 }
 
 export default class FitbitLiveData extends EventEmitter {
-  login(authinfos) {
-    this.authinfos = authinfos;
-    generateBtleCredentials(this.authinfos)
+  constructor() {
+    super();
+    this.trackers = [];
+  }
+  addAccount(authinfo) {
+    generateBtleCredentials(authinfo)
       .then((trackers) => {
         debug('tracker')('login succeeded');
-        this.trackers = trackers;
-        this.emit('authenticated');
+        this.trackers = this.trackers.concat(trackers);
+        const infos = trackers.map(tracker => ({name: tracker.name, address: tracker.address}));
+        debug('tracker')(`available trackers: ${infos}`);
+        this.listenerCount('success') > 0 && this.emit('success', infos);
       })
       .catch((err) => {
         debug('tracker')(err);
-        this.emit('error', 'login_failed');
+        this.listenerCount('fail') > 0 && this.emit('fail', 'login_failed');
       });
   }
 
-  scan() {
+  scanTrackers(targetTrackersInfo) {
+    targetTrackersInfo = (() => {
+      return targetTrackersInfo ? (targetTrackersInfo instanceof Array ? targetTrackersInfo : [targetTrackersInfo]) : [];
+    })();
+    this.trackers = (() => {
+      targetTrackersInfo = targetTrackersInfo.filter((targetTrackerInfo) => {
+        return this.trackers.filter((tracker) => {
+          return tracker.name === targetTrackerInfo.name && tracker.address === targetTrackerInfo.address;
+        }).length === 1;
+      })
+      if (targetTrackersInfo.length === 0) return this.trackers;
+      return this.trackers.filter((tracker) => {
+        return targetTrackersInfo.filter((targetTrackerInfo) => {
+          return tracker.name === targetTrackerInfo.name && tracker.address === targetTrackerInfo.address;
+        }).length === 1;
+      });
+    })();
+    if (this.trackers.length === 0) {
+      this.listenerCount('error') > 0 && this.emit('error', 'no available trackers');
+      return;
+    }
     noble.on('discover', (peripheral) => {
       if (peripheral.address === 'unknown') return;
       const target = this.trackers.filter((info) => {
@@ -308,12 +333,12 @@ export default class FitbitLiveData extends EventEmitter {
       if (target.length === 1) {
         debug('tracker')(`'${peripheral.address}' is discovered`);
         target[0].tracker = new Tracker(peripheral, target[0]);
-        this.emit('discover', target[0].tracker);
+        this.listenerCount('discover') > 0 && this.emit('discover', target[0].tracker);
         if (this.trackers.filter((info) => {return !info.tracker;}).length === 0) noble.stopScanning();
       }
     });
     const gattServer = new GattServer();
-    gattServer.on('complete', () => {
+    gattServer.on('listen', () => {
       if (noble.state === 'poweredOn') {
         debug('tracker')('already powered on.');
         debug('tracker')('start scanning...');
@@ -333,6 +358,6 @@ export default class FitbitLiveData extends EventEmitter {
       process.stderr.write(`${error}\n`);
       process.exit(1);
     });
-    gattServer.launch();
+    gattServer.listen();
   }
 }

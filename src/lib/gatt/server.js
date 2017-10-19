@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import bleno from 'bleno';
 
 export default class GattServer extends EventEmitter {
-  launch() {
+  listen() {
     const UUID_SERVICE_NOTIFICATION_CENTER = '16bcfd00-253f-c348-e831-0db3e334d580';
     const UUID_CHARACTERISTICS_NOTIFICATION_SOURCE = '16bcfd02-253f-c348-e831-0db3e334d580';
     
@@ -28,7 +28,7 @@ export default class GattServer extends EventEmitter {
 
     const onComplete = (error) => {
       if (error) this.emit('error', error);
-      else this.emit('complete')
+      else this.emit('listen')
     };
 
     if (bleno.state === 'poweredOn') {
