@@ -9,8 +9,8 @@
     }
   );
   qs.some(function(query) {
-    if (qs.name === 'code') {
-      document.querySelector('#code').innerHTML = qs.value;
+    if (query.name === 'code') {
+      document.querySelector('#code').innerHTML = query.value;
       return true;
     }
     return false;
