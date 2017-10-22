@@ -59,7 +59,7 @@ export default (accounts) => {
     }));
   }).then((results) => {
     const devicesTypes = results.responses.pop().data.deviceTypes;
-    const tokens = results.tokens;
+    const { tokens } = results;
     const allDevices = results.responses.reduce((prev, curr, index) => {
       const userDevices = curr.data;
       return prev.concat(userDevices.map((device) => {
