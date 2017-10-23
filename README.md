@@ -44,13 +44,6 @@ $ npm i . -g
 import FitbitLiveData from 'fitbit-livedata';
 const fitbit = new FitbitLiveData();
 
-fitbit.on('authenticated', () => {
-  fitbit.scan();
-});
-fitbit.on('error', (err) => {
-  console.error(`${err}`);
-  process.exit(1);
-})
 fitbit.on('discover', (tracker) => {
   tracker.on('disconnect', (data) => {
     console.log('tracker is disconnected.');
@@ -79,8 +72,12 @@ fitbit.on('discover', (tracker) => {
   });
   tracker.connect();
 });
+fitbit.on('error', (error) => {
+  console.error(`${error}\n`);
+  process.exit(1);
+});
 
-fitbit.login([
+const accounts = [
   {
     username: fitbitUser1_Username,
     password: fitbitUser1_Password
@@ -90,7 +87,28 @@ fitbit.login([
     password: fitbitUser2_Password
   },
 //  :
-]);
+];
+
+accounts.reduce((prev, curr) => {
+  return prev.then(() => {
+    return new Promise((resolve) => {
+      fitbit.addAccount(curr)
+        .then((trackerInfos) => {
+          // login succeeded
+          console.log(`${trackersInfos}\n`);
+          resolve();
+        })
+        .catch((err) => {
+          // login failed
+          console.error(`login failed\n`);
+          console.error(`${err}\n`);
+          resolve();
+        });
+    });
+  });
+}, Promise.resolve()).then(() => {
+  fitbit.scanTrackers();
+});
 ```
 
 ### Usage as CLI tool
