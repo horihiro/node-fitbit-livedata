@@ -54,7 +54,7 @@ const discoverSomeServicesAndCharacteristicsAsync =
   (p, sUUIDs, cUUIDs) => new Promise((res, rej) => {
     p.discoverSomeServicesAndCharacteristics(sUUIDs, cUUIDs, (err, s, c) => {
       if (err) rej(err);
-      else res({ s, c });
+      else res({ services: s, characteristics: c });
     });
   });
 
