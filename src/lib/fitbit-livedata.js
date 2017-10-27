@@ -266,8 +266,8 @@ export default class FitbitLiveData extends EventEmitter {
           resolve(infos);
         })
         .catch((err) => {
-          debug('fitbit-livedata')('login failed');
-          resolve(err);
+          debug('fitbit-livedata')(err.response.data.errors.map(e => e.message).join('\n'));
+          resolve([]);
         });
     });
   }

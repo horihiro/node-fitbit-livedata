@@ -84,7 +84,8 @@ Promise.resolve().then(() => {
               });
               resolve();
             })
-            .catch(() => {
+            .catch((err) => {
+              debug('fitbit-livedata-cli')(`${err}`);
               resolve();
             }))), Promise.resolve()).then(() => {
       debug('fitbit-livedata-cli')(`all trackers are ${JSON.stringify(trackers, null, 2)}`);
