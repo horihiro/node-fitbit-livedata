@@ -2,7 +2,6 @@ import EventEmitter from 'events';
 import { exec } from 'child_process';
 import path from 'path';
 import axios from 'axios';
-import noble from 'noble';
 import debug from 'debug';
 // import TrackerAuthCredentials from './tracker-auth-credentials';
 import generateBtleCredentials from './generateBtleCredentials';
@@ -289,37 +288,40 @@ export default class FitbitLiveData extends EventEmitter {
       this.emit('error', 'no available trackers');
       return;
     }
-    noble.on('discover', (p) => {
-      if (p.address === 'unknown') return;
-      const target = this.trackers.filter(i => i.address.toLowerCase() === p.address.toLowerCase());
-      if (target.length === 1) {
-        debug('tracker')(`'${p.address}' is discovered`);
-        target[0].tracker = new Tracker(p, target[0]);
-        this.emit('discover', target[0].tracker);
-        if (this.trackers.filter(i => !i.tracker).length === 0) noble.stopScanning();
-      }
+    import(process.platform === 'win32' ? 'noble-uwp' : 'noble').then((noble) => {
+      noble.on('discover', (p) => {
+        if (p.address === 'unknown') return;
+        const target = this.trackers.filter(i => i.address.toLowerCase() === p.address.toLowerCase());
+        if (target.length === 1) {
+          debug('tracker')(`'${p.address}' is discovered`);
+          target[0].tracker = new Tracker(p, target[0]);
+          this.emit('discover', target[0].tracker);
+          if (this.trackers.filter(i => !i.tracker).length === 0) noble.stopScanning();
+        }
+      });
+      const gattServer = new GattServer();
+      const listen = () => {
+        if (noble.state === 'poweredOn') {
+          debug('fitbit-livedata')('already powered on.');
+          debug('fitbit-livedata')('start scanning...');
+          noble.startScanning();
+        } else {
+          noble.on('stateChange', (state) => {
+            if (state === 'poweredOn') {
+              debug('fitbit-livedata')('start scanning...');
+              noble.startScanning();
+            } else {
+              noble.stopScanning();
+            }
+          });
+        }
+      };
+      gattServer.on('listen', listen);
+      gattServer.on('error', (error) => {
+        process.stderr.write(`${error}\n`);
+        listen();
+      });
+      gattServer.listen();
     });
-    const gattServer = new GattServer();
-    gattServer.on('listen', () => {
-      if (noble.state === 'poweredOn') {
-        debug('fitbit-livedata')('already powered on.');
-        debug('fitbit-livedata')('start scanning...');
-        noble.startScanning();
-      } else {
-        noble.on('stateChange', (state) => {
-          if (state === 'poweredOn') {
-            debug('fitbit-livedata')('start scanning...');
-            noble.startScanning();
-          } else {
-            noble.stopScanning();
-          }
-        });
-      }
-    });
-    gattServer.on('error', (error) => {
-      process.stderr.write(`${error}\n`);
-      process.exit(1);
-    });
-    gattServer.listen();
   }
 }

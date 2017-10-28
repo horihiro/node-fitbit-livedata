@@ -19,7 +19,6 @@ const PATH_GENBLECREDS = '/1/user/-/devices/tracker/generateBtleClientAuthCreden
 export default (accounts) => {
   const accountArray = (() => (accounts instanceof Array ? accounts : [accounts]))();
   return Promise.all(accountArray.map((account) => {
-
     const params = (() => {
       const queries = {
         scope: SCOPE,
