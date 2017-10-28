@@ -9,11 +9,20 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
 ## Requirement
 - Host Machine
     - macOS
+    - Windows10 Creators Update or later
 - Runtime
     - node.js
 - Fitbit Account
 - Fitbit Tracker(Device) registered in the above account
     - Charge HR
+
+## Remarks
+### for Mac
+Using this module on macOS, you need to use a tracker which you have connected to your macOS previously.
+
+### for Windows
+Because of using [noble-uwp](https://github.com/jasongin/noble-uwp) (it's very useful !), the version of your windows has to be Creators Update or later.<br>
+And this module on Windows can't get heart rate from your trackers.
 
 ## Install
 This moudle is not published on npm yet.
