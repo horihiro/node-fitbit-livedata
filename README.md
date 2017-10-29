@@ -11,7 +11,8 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
     - macOS
     - Windows10 Creators Update or later
 - Runtime
-    - node.js
+    - node.js (v6 or later)
+    - Java (v1.8.0 or later)
 - Fitbit Account
 - Fitbit Tracker(Device) registered in the above account
     - Charge HR
