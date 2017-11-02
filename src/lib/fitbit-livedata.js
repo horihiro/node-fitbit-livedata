@@ -101,19 +101,28 @@ export class Tracker extends EventEmitter {
     super();
     this.peripheral = peripheral;
     this.params = params;
-  }
-
-  disconnect(forceReconnect) {
-    this.forceReconnect = forceReconnect;
-    this.peripheral.disconnect();
-  }
-
-  connect(forceReconnect) {
-    this.forceReconnect = forceReconnect;
-    this.peripheral.once('disconnect', () => {
-      if (this.forceReconnect) this.connect(true);
+    this.connected = false;
+    this.peripheral.on('disconnect', () => {
       this.emit('disconnect');
     });
+  }
+
+  disconnect() {
+    return new Promise((resolve) => {
+      if (this.connected) {
+        this.peripheral.once('disconnect', () => {
+          resolve();
+          this.connected = false;
+        });
+        this.peripheral.disconnect();
+      } else {
+        this.emit('disconnect');
+        resolve();
+      }
+    });
+  }
+
+  connect() {
     return connectAsync(this.peripheral)
       .then(() => {
         this.emit('connect');
@@ -126,7 +135,8 @@ export class Tracker extends EventEmitter {
       })
       .then((data) => {
         debug('fitbit-livedata')(`${data.characteristics.length} characteristics are found`);
-        return Promise.all(data.characteristics.map(ch => discoverDescriptorsAsync(ch))).then(() => data.characteristics);
+        return Promise.all(data.characteristics.map(ch => discoverDescriptorsAsync(ch)))
+          .then(() => data.characteristics);
       })
       .then((chs) => {
         const control = chs.filter(ch => ch.uuid === UUID_CHARACTERISTIC_READ_DATA.replace(/-/g, ''))[0];
@@ -251,6 +261,7 @@ export default class FitbitLiveData extends EventEmitter {
     super();
     this.trackers = [];
   }
+
   addAccount(authinfo) {
     return new Promise((resolve) => {
       generateBtleCredentials(authinfo)
@@ -268,6 +279,21 @@ export default class FitbitLiveData extends EventEmitter {
           debug('fitbit-livedata')(err.response.data.errors.map(e => e.message).join('\n'));
           resolve([]);
         });
+    });
+  }
+
+  disconnectAllTrackers() {
+    return this.trackers.reduce(
+      (prev, curr) =>
+        prev.then(() =>
+          new Promise((res) => {
+            curr.disconnect()
+              .then(() => res)
+              .catch(() => res);
+          }))
+      , Promise.resolve(),
+    ).then(() => {
+      this.trackers = [];
     });
   }
 
@@ -291,7 +317,8 @@ export default class FitbitLiveData extends EventEmitter {
     import(process.platform === 'win32' ? 'noble-uwp' : 'noble').then((noble) => {
       noble.on('discover', (p) => {
         if (p.address === 'unknown') return;
-        const target = this.trackers.filter(i => i.address.toLowerCase() === p.address.toLowerCase());
+        const target = this.trackers.filter(i =>
+          i.address.toLowerCase() === p.address.toLowerCase());
         if (target.length === 1) {
           debug('tracker')(`'${p.address}' is discovered`);
           target[0].tracker = new Tracker(p, target[0]);
