@@ -292,9 +292,7 @@ export default class FitbitLiveData extends EventEmitter {
               .catch(() => res);
           }))
       , Promise.resolve(),
-    ).then(() => {
-      this.trackers = [];
-    });
+    );
   }
 
   scanTrackers(targetTrackersInfo) {
