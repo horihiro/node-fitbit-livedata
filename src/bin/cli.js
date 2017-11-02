@@ -91,7 +91,7 @@ Promise.resolve().then(() => {
       debug('fitbit-livedata-cli')(`all trackers are ${JSON.stringify(trackers, null, 2)}`);
       fitbit.on('discover', (tracker) => {
         tracker.on('disconnect', () => {
-          debug('tracker')('disconnect');
+          debug('tracker')('disconnected');
           tracker.connect();
         });
 
