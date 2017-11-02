@@ -91,10 +91,10 @@ const writeData = (reqCh, reqData, resCh, cond) => new Promise((resolve) => {
   });
 });
 
-const arrange4Bytes =
-  (bytes, fr) => bytes[fr + 3] << 24 | bytes[fr + 2] << 16 | bytes[fr + 1] << 8 | bytes[fr];
-const arrange2Bytes =
-  (bytes, fr) => bytes[fr + 1] << 8 | bytes[fr];
+const arrange4Bytes = (bytes, fr) =>
+  (bytes[fr + 3] * 16777216) + (bytes[fr + 2] * 65536) + (bytes[fr + 1] * 256) + bytes[fr];
+const arrange2Bytes = (bytes, fr) =>
+  (bytes[fr + 1] * 256) + bytes[fr];
 
 export class Tracker extends EventEmitter {
   constructor(peripheral, params) {
@@ -171,10 +171,14 @@ export class Tracker extends EventEmitter {
             dataSent.push(getRandomInt(0x00, 0xff));
             dataSent.push(getRandomInt(0x00, 0xff));
             dataSent.push(getRandomInt(0x00, 0xff));
-            dataSent.push(nonce & 0x000000ff);
-            dataSent.push((nonce >> 8) & 0x000000ff);
-            dataSent.push((nonce >> 16) & 0x000000ff);
-            dataSent.push((nonce >> 24) & 0x000000ff);
+            dataSent.push(nonce % 256);
+            // dataSent.push(nonce & 0x000000ff);
+            dataSent.push(Math.floor(nonce / 256) % 256);
+            // dataSent.push((nonce >> 8) & 0x000000ff);
+            dataSent.push(Math.floor(nonce / 65536) % 256);
+            // dataSent.push((nonce >> 16) & 0x000000ff);
+            dataSent.push(Math.floor(nonce / 16777216) % 256);
+            // dataSent.push((nonce >> 24) & 0x000000ff);
             return writeData(
               writable,
               // new Buffer(dataSent),
@@ -225,7 +229,7 @@ export class Tracker extends EventEmitter {
               const calories = arrange2Bytes(data, 12);
               const elevation = arrange2Bytes(data, 14) / 10;
               const veryActive = arrange2Bytes(data, 16);
-              const heartRate = data[18] & 255;
+              const heartRate = data[18] ? data[18] % 256 : 0;
               this.emit('data', {
                 device: {
                   name: this.params.name,
