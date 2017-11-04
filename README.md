@@ -8,8 +8,9 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
 
 ## Requirement
 - Host Machine
-    - macOS
+    - macOS El Capitan
     - Windows10 Creators Update or later
+    - Raspbian 4.9
 - Runtime
     - node.js (v6 or later)
     - Java (v1.8.0 or later)
@@ -24,6 +25,9 @@ Using this module on macOS, you need to use a tracker which you have connected t
 ### for Windows
 Because of using [noble-uwp](https://github.com/jasongin/noble-uwp) (it's very useful !), the version of your windows has to be Creators Update or later.<br>
 And this module on Windows can't get heart rate from your trackers.
+
+### for Raspbian
+If you want to get heart rate from your trackers, you need to comment out [the line](https://github.com/sandeepmistry/bleno/blob/master/lib/hci-socket/bindings.js#L137) in `node_modules/bleno/lib/hci-socket/bindings.js` ([bleno's issue](https://github.com/sandeepmistry/bleno/issues/326))
 
 ## Install
 This moudle is not published on npm yet.
