@@ -101,7 +101,7 @@ export class Tracker extends EventEmitter {
     super();
     this.peripheral = peripheral;
     this.params = params;
-    this.connected = false;
+    this.status = 'disconnected';
     this.peripheral.on('disconnect', () => {
       this.emit('disconnect');
     });
@@ -109,10 +109,10 @@ export class Tracker extends EventEmitter {
 
   disconnect() {
     return new Promise((resolve) => {
-      if (this.connected) {
+      if (this.status !== 'disconnected') {
         this.peripheral.once('disconnect', () => {
           resolve();
-          this.connected = false;
+          this.status = 'disconnected';
         });
         this.peripheral.disconnect();
       } else {
@@ -125,6 +125,7 @@ export class Tracker extends EventEmitter {
   connect() {
     return connectAsync(this.peripheral)
       .then(() => {
+        this.status = 'negotiating';
         this.emit('connect');
         // return discoverSomeServicesAndCharacteristicsAsync(
         //   this.peripheral,
@@ -220,6 +221,7 @@ export class Tracker extends EventEmitter {
           .then(() => unsubscribeAsync(control))
           .then(() => subscribeAsync(live))
           .then(() => {
+            this.status = 'connected';
             live.on('read', (data) => {
               // 8cbca859 e70d0000 0c572600 8103     3c00      1400       4d        02
               // time     steps    distanse calories elevation veryActive heartRate heartrate
@@ -297,6 +299,18 @@ export default class FitbitLiveData extends EventEmitter {
           }))
       , Promise.resolve(),
     );
+  }
+
+  get trackerStatus() {
+    return this.trackers.map((tracker) => {
+      const { name, address, serialNumber } = tracker;
+      return {
+        name,
+        address,
+        serialNumber,
+        status: tracker.tracker.status,
+      };
+    });
   }
 
   scanTrackers(targetTrackersInfo) {

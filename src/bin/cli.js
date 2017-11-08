@@ -3,7 +3,7 @@ import readline from 'readline';
 import stream from 'stream';
 import program from 'commander';
 import debug from 'debug';
-import FitbitLiveData from '..';
+import fitbit from '..';
 import pkg from '../../package.json';
 
 const mutableStdout = new stream.Writable({
@@ -71,8 +71,6 @@ Promise.resolve().then(() => {
       password: program.password,
     }];
     const trackers = [];
-
-    const fitbit = new FitbitLiveData();
 
     authInfos.reduce((prev, account) =>
       prev.then(() =>

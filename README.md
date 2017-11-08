@@ -55,8 +55,7 @@ $ npm i . -g
 ### Usage as library
 
 ```javascript
-import FitbitLiveData from 'fitbit-livedata';
-const fitbit = new FitbitLiveData();
+import fitbit from 'fitbit-livedata';
 
 fitbit.on('discover', (tracker) => {
   tracker.on('disconnect', (data) => {
