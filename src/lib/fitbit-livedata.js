@@ -269,6 +269,7 @@ export default class FitbitLiveData extends EventEmitter {
     super();
     this.trackers = [];
     this.isScanning = false;
+    this.noble = null;
   }
 
   getTrackers(authinfo) {
@@ -302,7 +303,9 @@ export default class FitbitLiveData extends EventEmitter {
               .catch(() => res);
           }))
       , Promise.resolve(),
-    );
+    ).then(() => {
+      if (this.noble && this.isScanning) this.noble.stopScanning();
+    });
   }
 
   get trackerStatus() {
@@ -340,8 +343,9 @@ export default class FitbitLiveData extends EventEmitter {
       return;
     }
     import(process.platform === 'win32' ? 'noble-uwp' : 'noble').then((noble) => {
-      if (noble.listenerCount('discover') === 0) {
-        noble.on('discover', (p) => {
+      if (!this.noble) this.noble = noble;
+      if (this.noble.listenerCount('discover') === 0) {
+        this.noble.on('discover', (p) => {
           if (p.address === 'unknown') return;
           const target = this.trackers.filter(i =>
             i.address.toLowerCase() === p.address.toLowerCase());
@@ -351,7 +355,7 @@ export default class FitbitLiveData extends EventEmitter {
             this.emit('discover', target[0].tracker);
             if (this.trackers.filter(i => !i.tracker).length === 0 && this.isScanning) {
               debug('fitbit-livedata')('stop scanning...');
-              noble.stopScanning();
+              this.noble.stopScanning();
               this.isScanning = false;
             }
           }
@@ -359,25 +363,25 @@ export default class FitbitLiveData extends EventEmitter {
       }
       if (gattServer.listenerCount('listen') === 0) {
         const listen = () => {
-          if (noble.state === 'poweredOn') {
+          if (this.noble.state === 'poweredOn') {
             if (this.trackers.filter(t => !t.tracker).length > 0 && !this.isScanning) {
               debug('fitbit-livedata')('already powered on.');
-              noble.startScanning();
+              this.noble.startScanning();
               this.isScanning = true;
             }
             // noble.startScanning();
           } else {
-            noble.on('stateChange', (state) => {
+            this.noble.on('stateChange', (state) => {
               if (state === 'poweredOn') {
                 if (this.trackers.filter(t => !t.tracker).length > 0 && !this.isScanning) {
                   debug('fitbit-livedata')('start scanning...');
-                  noble.startScanning();
+                  this.noble.startScanning();
                   this.isScanning = true;
                 }
                 // noble.startScanning();
               } else {
                 debug('fitbit-livedata')('stop scanning...');
-                noble.stopScanning();
+                this.noble.stopScanning();
                 this.isScanning = false;
               }
             });
