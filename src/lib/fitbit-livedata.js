@@ -96,6 +96,8 @@ const arrange4Bytes = (bytes, fr) =>
 const arrange2Bytes = (bytes, fr) =>
   (bytes[fr + 1] * 256) + bytes[fr];
 
+const gattServer = new GattServer();
+
 export class Tracker extends EventEmitter {
   constructor(peripheral, params) {
     super();
@@ -266,20 +268,22 @@ export default class FitbitLiveData extends EventEmitter {
   constructor() {
     super();
     this.trackers = [];
+    this.isScanning = false;
   }
 
-  addAccount(authinfo) {
+  getTrackers(authinfo) {
     return new Promise((resolve) => {
       generateBtleCredentials(authinfo)
         .then((trackers) => {
           debug('fitbit-livedata')('login succeeded');
-          this.trackers = this.trackers.concat(trackers);
-          const infos = trackers.map(tracker => ({
-            name: tracker.name,
-            address: tracker.address,
-          }));
-          debug('fitbit-livedata')(`available trackers: ${JSON.stringify(infos)}`);
-          resolve(infos);
+          // this.trackers = this.trackers.concat(trackers);
+          // const infos = trackers.map(tracker => ({
+          //   name: tracker.name,
+          //   address: tracker.address,
+          // }));
+          // debug('fitbit-livedata')(`available trackers: ${JSON.stringify(infos)}`);
+          // resolve(infos);
+          resolve(trackers);
         })
         .catch((err) => {
           debug('fitbit-livedata')(err.response.data.errors.map(e => e.message).join('\n'));
@@ -313,57 +317,78 @@ export default class FitbitLiveData extends EventEmitter {
     });
   }
 
-  scanTrackers(targetTrackersInfo) {
-    let infos = (() => {
-      if (!targetTrackersInfo) return [];
-      else if (targetTrackersInfo instanceof Array) return targetTrackersInfo;
-      return [targetTrackersInfo];
-    })();
-    this.trackers = (() => {
-      infos = infos.filter(i =>
-        this.trackers.filter(tr => tr.name === i.name && tr.address === i.address).length === 1);
-      if (infos.length === 0) return this.trackers;
-      return this.trackers.filter(tracker =>
-        infos.filter(i => tracker.name === i.name && tracker.address === i.address).length === 1);
-    })();
+  scanTrackers(trackers) {
+    // let infos = (() => {
+    //   if (!targetTrackersInfo) return [];
+    //   else if (targetTrackersInfo instanceof Array) return targetTrackersInfo;
+    //   return [targetTrackersInfo];
+    // })();
+    // this.trackers = (() => {
+    //   infos = infos.filter(i =>
+    //     this.trackers.filter(tr => tr.name === i.name && tr.address === i.address).length === 1);
+    //   if (infos.length === 0) return this.trackers;
+    //   return this.trackers.filter(tracker =>
+    //     infos.filter(i => tracker.name === i.name && tracker.address === i.address).length === 1);
+    // })();
+    const addresses = this.trackers.map(i => i.address.toLowerCase());
+    trackers.forEach((t) => {
+      if (addresses.indexOf(t.address.toLowerCase()) < 0) this.trackers.push(t);
+    });
+
     if (this.trackers.length === 0) {
       this.emit('error', 'no available trackers');
       return;
     }
     import(process.platform === 'win32' ? 'noble-uwp' : 'noble').then((noble) => {
-      noble.on('discover', (p) => {
-        if (p.address === 'unknown') return;
-        const target = this.trackers.filter(i =>
-          i.address.toLowerCase() === p.address.toLowerCase());
-        if (target.length === 1) {
-          debug('tracker')(`'${p.address}' is discovered`);
-          target[0].tracker = new Tracker(p, target[0]);
-          this.emit('discover', target[0].tracker);
-          if (this.trackers.filter(i => !i.tracker).length === 0) noble.stopScanning();
-        }
-      });
-      const gattServer = new GattServer();
-      const listen = () => {
-        if (noble.state === 'poweredOn') {
-          debug('fitbit-livedata')('already powered on.');
-          debug('fitbit-livedata')('start scanning...');
-          noble.startScanning();
-        } else {
-          noble.on('stateChange', (state) => {
-            if (state === 'poweredOn') {
-              debug('fitbit-livedata')('start scanning...');
-              noble.startScanning();
-            } else {
+      if (noble.listenerCount('discover') === 0) {
+        noble.on('discover', (p) => {
+          if (p.address === 'unknown') return;
+          const target = this.trackers.filter(i =>
+            i.address.toLowerCase() === p.address.toLowerCase());
+          if (target.length === 1) {
+            debug('tracker')(`'${p.address}' is discovered`);
+            target[0].tracker = new Tracker(p, target[0]);
+            this.emit('discover', target[0].tracker);
+            if (this.trackers.filter(i => !i.tracker).length === 0 && this.isScanning) {
+              debug('fitbit-livedata')('stop scanning...');
               noble.stopScanning();
+              this.isScanning = false;
             }
-          });
-        }
-      };
-      gattServer.on('listen', listen);
-      gattServer.on('error', (error) => {
-        process.stderr.write(`${error}\n`);
-        listen();
-      });
+          }
+        });
+      }
+      if (gattServer.listenerCount('listen') === 0) {
+        const listen = () => {
+          if (noble.state === 'poweredOn') {
+            if (this.trackers.filter(t => !t.tracker).length > 0 && !this.isScanning) {
+              debug('fitbit-livedata')('already powered on.');
+              noble.startScanning();
+              this.isScanning = true;
+            }
+            // noble.startScanning();
+          } else {
+            noble.on('stateChange', (state) => {
+              if (state === 'poweredOn') {
+                if (this.trackers.filter(t => !t.tracker).length > 0 && !this.isScanning) {
+                  debug('fitbit-livedata')('start scanning...');
+                  noble.startScanning();
+                  this.isScanning = true;
+                }
+                // noble.startScanning();
+              } else {
+                debug('fitbit-livedata')('stop scanning...');
+                noble.stopScanning();
+                this.isScanning = false;
+              }
+            });
+          }
+        };
+        gattServer.on('listen', listen);
+        gattServer.on('error', (error) => {
+          process.stderr.write(`${error}\n`);
+          listen();
+        });
+      }
       gattServer.listen();
     });
   }

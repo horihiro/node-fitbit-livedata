@@ -101,13 +101,17 @@ const accounts = [
   },
 //  :
 ];
+const trackers = [];
 
 accounts.reduce((prev, curr) => {
   return prev.then(() => {
     return new Promise((resolve) => {
-      fitbit.addAccount(curr)
+      fitbit.getTrackers(curr)
         .then((trackerInfos) => {
           // login succeeded
+          trackerInfos.forEach((trackerInfo) => {
+            trackers.push(trackerInfo);
+          });
           console.log(`${trackersInfos}\n`);
           resolve();
         })
@@ -120,7 +124,7 @@ accounts.reduce((prev, curr) => {
     });
   });
 }, Promise.resolve()).then(() => {
-  fitbit.scanTrackers();
+  fitbit.scanTrackers(trackers);
 });
 ```
 

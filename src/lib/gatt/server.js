@@ -1,9 +1,18 @@
 import EventEmitter from 'events';
 
 export default class GattServer extends EventEmitter {
+  constructor() {
+    super();
+
+    this.isListening = false;
+  }
+
   listen() {
     if (process.platform === 'win32') {
       this.emit('error', 'win32 is not supported.');
+      return;
+    } else if (this.isListening) {
+      this.emit('listen');
       return;
     }
     import('bleno').then((bleno) => {
@@ -31,8 +40,12 @@ export default class GattServer extends EventEmitter {
       });
 
       const onComplete = (error) => {
-        if (error) this.emit('error', error);
-        else this.emit('listen');
+        if (error) {
+          this.emit('error', error);
+          return;
+        }
+        this.emit('listen');
+        this.isListening = true;
       };
 
       if (bleno.state === 'poweredOn') {

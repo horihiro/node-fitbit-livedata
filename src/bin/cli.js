@@ -75,7 +75,7 @@ Promise.resolve().then(() => {
     authInfos.reduce((prev, account) =>
       prev.then(() =>
         new Promise(resolve =>
-          fitbit.addAccount(account)
+          fitbit.getTrackers(account)
             .then((trackerInfos) => {
               trackerInfos.forEach((trackerInfo) => {
                 trackers.push(trackerInfo);
@@ -118,6 +118,6 @@ Promise.resolve().then(() => {
         process.stderr.write(`${error}\n`);
         process.exit(1);
       });
-      fitbit.scanTrackers();
+      fitbit.scanTrackers(trackers);
     });
   });
