@@ -182,6 +182,7 @@ export class Tracker extends EventEmitter {
           .then(() => unsubscribeAsync(control))
           .then(() => subscribeAsync(live))
           .then(() => {
+            this.emit('connect');
             this.status = 'connected';
             live.on('read', (data) => {
               // 8cbca859 e70d0000 0c572600 8103     3c00      1400       4d        02
@@ -256,7 +257,13 @@ export default class FitbitLiveData extends EventEmitter {
           }))
       , Promise.resolve(),
     ).then(() => {
-      if (this.noble && this.isScanning) this.noble.stopScanning();
+      this.emit('disconnectAll');
+      if (this.noble && this.isScanning) {
+        debug('fitbit-livedata')('stop scanning.');
+        this.noble.stopScanning();
+        this.isScanning = false;
+        if (process.platform === 'win32') this.emit('scanStart');
+      }
     });
   }
 
@@ -285,6 +292,12 @@ export default class FitbitLiveData extends EventEmitter {
     import(process.platform === 'win32' ? 'noble-uwp' : 'noble').then((noble) => {
       if (!this.noble) this.noble = noble;
       if (this.noble.listenerCount('discover') === 0) {
+        this.noble.on('scanStart', () => {
+          this.emit('scanStart');
+        });
+        this.noble.on('scanStop', () => {
+          this.emit('scanStop');
+        });
         this.noble.on('discover', (p) => {
           if (p.address === 'unknown') return;
           const target = this.trackers.filter(i =>
@@ -294,9 +307,10 @@ export default class FitbitLiveData extends EventEmitter {
             target[0].tracker = new Tracker(p, target[0]);
             this.emit('discover', target[0].tracker);
             if (this.trackers.filter(i => !i.tracker).length === 0 && this.isScanning) {
-              debug('fitbit-livedata')('stop scanning...');
+              debug('fitbit-livedata')('stop scanning.');
               this.noble.stopScanning();
               this.isScanning = false;
+              if (process.platform === 'win32') this.emit('scanStop');
             }
           }
         });
@@ -308,6 +322,7 @@ export default class FitbitLiveData extends EventEmitter {
               debug('fitbit-livedata')('already powered on.');
               this.noble.startScanning();
               this.isScanning = true;
+              if (process.platform === 'win32') this.emit('scanStart');
             }
           } else {
             this.noble.on('stateChange', (state) => {
@@ -316,11 +331,13 @@ export default class FitbitLiveData extends EventEmitter {
                   debug('fitbit-livedata')('start scanning...');
                   this.noble.startScanning();
                   this.isScanning = true;
+                  if (process.platform === 'win32') this.emit('scanStart');
                 }
               } else {
-                debug('fitbit-livedata')('stop scanning...');
+                debug('fitbit-livedata')('stop scanning.');
                 this.noble.stopScanning();
                 this.isScanning = false;
+                if (process.platform === 'win32') this.emit('scanStop');
               }
             });
           }
