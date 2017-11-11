@@ -3,7 +3,6 @@ import { exec } from 'child_process';
 import path from 'path';
 import axios from 'axios';
 import debug from 'debug';
-// import TrackerAuthCredentials from './tracker-auth-credentials';
 import generateBtleCredentials from './generateBtleCredentials';
 import GattServer from './gatt/server';
 
@@ -16,24 +15,9 @@ const execAsync = cmd => new Promise((resolve, reject) => {
   });
 });
 
-// const UUID_SERVICE_GENERIC_ACCESS = '00001800-0000-1000-8000-00805f9b34fb';
-// const UUID_SERVICE_FITBIT_COMM = 'adabfb00-6e7d-4601-bda2-bffaa68956ba';
-// const UUID_SERVICE_FITBIT_LIVE = '558dfa00-4fa8-4105-9f02-4eaa93e62980';
-
-// const UUID_CHARACTERISTIC_GENERIC_ACCESS = '00002A00-0000-1000-8000-00805f9b34fb';
-// const UUID_CHARACTERISTIC_DEVICE_NAME = 'fb00';
-// const UUID_CHARACTERISTIC_APPEARANCE = '2a01';
-// const UUID_CHARACTERISTIC_MANUF_NAME = '2a29';
-// const UUID_CHARACTERISTIC_BATTERY_LEVEL = '2a19';
 const UUID_CHARACTERISTIC_READ_DATA = 'adabfb01-6e7d-4601-bda2-bffaa68956ba';
 const UUID_CHARACTERISTIC_WRITE_DATA = 'adabfb02-6e7d-4601-bda2-bffaa68956ba';
 const UUID_CHARACTERISTIC_LIVE_DATA = '558dfa01-4fa8-4105-9f02-4eaa93e62980';
-// const UUID_CHARACTERISTIC_READ_UNKNOWN1 = 'adabfb03-6e7d-4601-bda2-bffaa68956ba';
-// const UUID_CHARACTERISTIC_READ_UNKNOWN2 = 'adabfb04-6e7d-4601-bda2-bffaa68956ba';
-// const UUID_CHARACTERISTIC_READ_UNKNOWN3 = 'adabfb05-6e7d-4601-bda2-bffaa68956ba';
-
-// const characteristicUuids = [];
-// const serviceUuids = [];
 
 const connectAsync = peripheral => new Promise((resolve, reject) => {
   peripheral.connect((err) => {
@@ -41,13 +25,6 @@ const connectAsync = peripheral => new Promise((resolve, reject) => {
     else resolve();
   });
 });
-
-// const discoverServicesAsync = (peripheral, serviceUUIDs) => new Promise((resolve, reject) => {
-//   peripheral.discoverServices(serviceUUIDs, (err, services) => {
-//     if (err) reject(err);
-//     else resolve(services);
-//   });
-// });
 
 const discoverSomeServicesAndCharacteristicsAsync =
   (p, sUUIDs, cUUIDs) => new Promise((res, rej) => {
@@ -129,11 +106,6 @@ export class Tracker extends EventEmitter {
       .then(() => {
         this.status = 'negotiating';
         this.emit('connect');
-        // return discoverSomeServicesAndCharacteristicsAsync(
-        //   this.peripheral,
-        //   serviceUuids.map(e => e.replace(/-/g, '')),
-        //   characteristicUuids.map(e => e.replace(/-/g, '')),
-        // );
         return discoverAllServicesAndCharacteristicsAsync(this.peripheral);
       })
       .then((data) => {
@@ -145,17 +117,12 @@ export class Tracker extends EventEmitter {
         const control = chs.filter(ch => ch.uuid === UUID_CHARACTERISTIC_READ_DATA.replace(/-/g, ''))[0];
         const live = chs.filter(ch => ch.uuid === UUID_CHARACTERISTIC_LIVE_DATA.replace(/-/g, ''))[0];
         const writable = chs.filter(ch => ch.uuid === UUID_CHARACTERISTIC_WRITE_DATA.replace(/-/g, ''))[0];
-        // const read = chs.filter(ch => ch.uuid === UUID_CHARACTERISTIC_MANUF_NAME.replace(/-/g, ''))[0];
         return subscribeAsync(control)
           .then(() => {
             // send message 'OPEN_SESSION'
             this.emit('openSession');
             return writeData(
               writable,
-              // new Buffer([
-              //   0xc0, 0x0a, 0x0a, 0x00, 0x08, 0x00,
-              //   0x10, 0x00, 0x00, 0x00, 0xc8, 0x00, 0x01
-              // ]),
               Buffer.from([
                 0xc0, 0x0a, 0x0a, 0x00, 0x08, 0x00,
                 0x10, 0x00, 0x00, 0x00, 0xc8, 0x00, 0x01,
@@ -175,23 +142,17 @@ export class Tracker extends EventEmitter {
             dataSent.push(getRandomInt(0x00, 0xff));
             dataSent.push(getRandomInt(0x00, 0xff));
             dataSent.push(nonce % 256);
-            // dataSent.push(nonce & 0x000000ff);
             dataSent.push(Math.floor(nonce / 256) % 256);
-            // dataSent.push((nonce >> 8) & 0x000000ff);
             dataSent.push(Math.floor(nonce / 65536) % 256);
-            // dataSent.push((nonce >> 16) & 0x000000ff);
             dataSent.push(Math.floor(nonce / 16777216) % 256);
-            // dataSent.push((nonce >> 24) & 0x000000ff);
             return writeData(
               writable,
-              // new Buffer(dataSent),
               Buffer.from(dataSent),
               control,
               data => data.length === 14,
             );
           })
           .then((dataRcv) => {
-            // const nonce = this.params.auth.btleClientAuthCredentials.nonce;
             const { authSubKey } = this.params.auth.btleClientAuthCredentials;
             const authType = this.params.auth.type || '';
             const binPath = path.join(__dirname, '../../bin');
@@ -202,7 +163,6 @@ export class Tracker extends EventEmitter {
                 this.emit('sendAuth');
                 return writeData(
                   writable,
-                  // new Buffer(bytes),
                   Buffer.from(bytes),
                   control,
                   data => data.length === 2,
@@ -214,7 +174,6 @@ export class Tracker extends EventEmitter {
             this.emit('authenticated');
             return writeData(
               writable,
-              // new Buffer([0xc0, 0x01]),
               Buffer.from([0xc0, 0x01]),
               control,
               data => data.length === 2,
@@ -277,13 +236,6 @@ export default class FitbitLiveData extends EventEmitter {
       generateBtleCredentials(authinfo)
         .then((trackers) => {
           debug('fitbit-livedata')('login succeeded');
-          // this.trackers = this.trackers.concat(trackers);
-          // const infos = trackers.map(tracker => ({
-          //   name: tracker.name,
-          //   address: tracker.address,
-          // }));
-          // debug('fitbit-livedata')(`available trackers: ${JSON.stringify(infos)}`);
-          // resolve(infos);
           resolve(trackers);
         })
         .catch((err) => {
@@ -321,18 +273,6 @@ export default class FitbitLiveData extends EventEmitter {
   }
 
   scanTrackers(trackers) {
-    // let infos = (() => {
-    //   if (!targetTrackersInfo) return [];
-    //   else if (targetTrackersInfo instanceof Array) return targetTrackersInfo;
-    //   return [targetTrackersInfo];
-    // })();
-    // this.trackers = (() => {
-    //   infos = infos.filter(i =>
-    //     this.trackers.filter(tr => tr.name === i.name && tr.address === i.address).length === 1);
-    //   if (infos.length === 0) return this.trackers;
-    //   return this.trackers.filter(tracker =>
-    //     infos.filter(i => tracker.name === i.name && tracker.address === i.address).length === 1);
-    // })();
     const addresses = this.trackers.map(i => i.address.toLowerCase());
     trackers.forEach((t) => {
       if (addresses.indexOf(t.address.toLowerCase()) < 0) this.trackers.push(t);
@@ -369,7 +309,6 @@ export default class FitbitLiveData extends EventEmitter {
               this.noble.startScanning();
               this.isScanning = true;
             }
-            // noble.startScanning();
           } else {
             this.noble.on('stateChange', (state) => {
               if (state === 'poweredOn') {
@@ -378,7 +317,6 @@ export default class FitbitLiveData extends EventEmitter {
                   this.noble.startScanning();
                   this.isScanning = true;
                 }
-                // noble.startScanning();
               } else {
                 debug('fitbit-livedata')('stop scanning...');
                 this.noble.stopScanning();

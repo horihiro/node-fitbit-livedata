@@ -12,7 +12,6 @@ const REDIRECT_URI = 'https://horihiro.github.io/node-fitbit-livedata/';
 const AUTHORIZATION = 'Basic MjI4VlNSOjQ1MDY4YTc2Mzc0MDRmYzc5OGEyMDhkNmMxZjI5ZTRm';
 
 const URL_OAUTH = 'https://android-api.fitbit.com/oauth2/token';
-// const PATH_DEVICES_TYPES = '/1.1/devices/types.json';
 const PATH_USER_DEVICES = '/1/user/-/devices.json';
 const PATH_GENBLECREDS = '/1/user/-/devices/tracker/generateBtleClientAuthCredentials.json';
 
@@ -40,7 +39,6 @@ export default (accounts) => {
     const options = {
       headers: {
         Authorization: AUTHORIZATION,
-        // Authorization: `Basic ${Buffer.from(`${authInfo.clientId}:${authInfo.clientSecret}`).toString('base64')}`,
       },
     };
     return axios.post(URL_OAUTH, params, options);
@@ -50,17 +48,11 @@ export default (accounts) => {
         Authorization: `Bearer ${response.data.access_token}`,
       },
     }));
-    // promises.push(axios.get(PATH_DEVICES_TYPES, {
-    //   headers: {
-    //     Authorization: `Bearer ${responses[0].data.access_token}`,
-    //   },
-    // }));
     return Promise.all(promises).then(results => ({
       responses: results,
       tokens: responses.map(response => response.data.access_token),
     }));
   }).then((results) => {
-    // const devicesTypes = results.responses.pop().data.deviceTypes;
     const { tokens } = results;
     const allDevices = results.responses.reduce((prev, curr, index) => {
       const userDevices = curr.data;
