@@ -88,18 +88,21 @@ Promise.resolve().then(() => {
             }))), Promise.resolve()).then(() => {
       debug('fitbit-livedata-cli')(`all trackers are ${JSON.stringify(trackers, null, 2)}`);
       fitbit.on('discover', (tracker) => {
-        tracker.on('disconnect', () => {
+        tracker.on('disconnected', () => {
           debug('tracker')('disconnected');
           tracker.connect();
         });
 
-        tracker.on('connect', () => {
-          debug('tracker')('connect');
+        tracker.on('connected', () => {
+          debug('tracker')('connected');
         });
-        tracker.on('openSession', () => {
+        tracker.on('connecting', () => {
+          debug('tracker')('connecting');
+        });
+        tracker.on('openingSession', () => {
           debug('tracker')('openSession');
         });
-        tracker.on('authenticate', () => {
+        tracker.on('authenticating', () => {
           debug('tracker')('authenticate');
         });
         tracker.on('sendAuth', () => {

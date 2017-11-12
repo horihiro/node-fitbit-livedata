@@ -82,20 +82,22 @@ export class Tracker extends EventEmitter {
     this.params = params;
     this.status = 'disconnected';
     this.peripheral.on('disconnect', () => {
-      this.emit('disconnect');
+      this.emit('disconnected');
     });
   }
 
   disconnect() {
     return new Promise((resolve) => {
       if (this.status !== 'disconnected') {
+        this.peripheral.removeAllListeners('disconnected');
         this.peripheral.once('disconnect', () => {
           resolve();
           this.status = 'disconnected';
+          this.emit('disconnected');
         });
         this.peripheral.disconnect();
       } else {
-        this.emit('disconnect');
+        this.emit('disconnected');
         resolve();
       }
     });
@@ -104,8 +106,8 @@ export class Tracker extends EventEmitter {
   connect() {
     return connectAsync(this.peripheral)
       .then(() => {
-        this.status = 'negotiating';
-        this.emit('connect');
+        this.emit('connecting');
+        this.status = 'connecting';
         return discoverAllServicesAndCharacteristicsAsync(this.peripheral);
       })
       .then((data) => {
@@ -120,7 +122,7 @@ export class Tracker extends EventEmitter {
         return subscribeAsync(control)
           .then(() => {
             // send message 'OPEN_SESSION'
-            this.emit('openSession');
+            this.emit('openingSession');
             return writeData(
               writable,
               Buffer.from([
@@ -133,7 +135,7 @@ export class Tracker extends EventEmitter {
           })
           .then(() => {
             // send message 'Command.AUTH_TRACKER'
-            this.emit('authenticate');
+            this.emit('authenticating');
             const dataSent = [0xc0, 0x50];
             const getRandomInt = (mi, mx) => (Math.floor(Math.random() * ((mx - mi) + 1)) + mi);
             const { nonce } = this.params.auth.btleClientAuthCredentials;
@@ -182,9 +184,10 @@ export class Tracker extends EventEmitter {
           .then(() => unsubscribeAsync(control))
           .then(() => subscribeAsync(live))
           .then(() => {
-            this.emit('connect');
+            this.emit('connected');
             this.status = 'connected';
             live.on('read', (data) => {
+              console.log('data');
               // 8cbca859 e70d0000 0c572600 8103     3c00      1400       4d        02
               // time     steps    distanse calories elevation veryActive heartRate heartrate
               const time = new Date(arrange4Bytes(data, 0) * 1000);
@@ -304,8 +307,9 @@ export default class FitbitLiveData extends EventEmitter {
             i.address.toLowerCase() === p.address.toLowerCase());
           if (target.length === 1) {
             debug('tracker')(`'${p.address}' is discovered`);
-            target[0].tracker = new Tracker(p, target[0]);
-            this.emit('discover', target[0].tracker);
+            const t = new Tracker(p, target[0]);
+            target[0].tracker = t;
+            this.emit('discover', t);
             if (this.trackers.filter(i => !i.tracker).length === 0 && this.isScanning) {
               debug('fitbit-livedata')('stop scanning.');
               this.noble.stopScanning();
@@ -318,7 +322,7 @@ export default class FitbitLiveData extends EventEmitter {
       if (gattServer.listenerCount('listen') === 0) {
         const listen = () => {
           if (this.noble.state === 'poweredOn') {
-            if (this.trackers.filter(t => !t.tracker).length > 0 && !this.isScanning) {
+            if (this.trackers.filter(t => !t.tracker || t.status !== 'connected').length > 0 && !this.isScanning) {
               debug('fitbit-livedata')('already powered on.');
               this.noble.startScanning();
               this.isScanning = true;
@@ -327,7 +331,7 @@ export default class FitbitLiveData extends EventEmitter {
           } else {
             this.noble.on('stateChange', (state) => {
               if (state === 'poweredOn') {
-                if (this.trackers.filter(t => !t.tracker).length > 0 && !this.isScanning) {
+                if (this.trackers.filter(t => !t.tracker || t.status !== 'connected').length > 0 && !this.isScanning) {
                   debug('fitbit-livedata')('start scanning...');
                   this.noble.startScanning();
                   this.isScanning = true;

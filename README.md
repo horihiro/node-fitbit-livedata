@@ -58,20 +58,23 @@ $ npm i . -g
 import fitbit from 'fitbit-livedata';
 
 fitbit.on('discover', (tracker) => {
-  tracker.on('disconnect', (data) => {
+  tracker.on('disconnected', (data) => {
     console.log('tracker is disconnected.');
 
     // if you want to re-connect automatically.
     tracker.connect();    
   });
 
-  tracker.on('connect', (data) => {
+  tracker.on('connecting', (data) => {
+    console.log('connecting to the tracker');
+  });
+  tracker.on('connected', (data) => {
     console.log('tracker is connected.');
   });
-  tracker.on('openSession', (data) => {
+  tracker.on('openingSession', (data) => {
     console.log('start tracker session');
   });
-  tracker.on('authenticate', (data) => {
+  tracker.on('authenticating', (data) => {
     console.log('start tracker authention.');
   });
   tracker.on('sendAuth', (data) => {
