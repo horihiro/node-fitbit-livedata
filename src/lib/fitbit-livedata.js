@@ -89,7 +89,7 @@ export class Tracker extends EventEmitter {
   disconnect() {
     return new Promise((resolve) => {
       if (this.status !== 'disconnected') {
-        this.peripheral.removeAllListeners('disconnected');
+        this.peripheral.removeAllListeners('disconnect');
         this.peripheral.once('disconnect', () => {
           resolve();
           this.status = 'disconnected';
@@ -187,7 +187,6 @@ export class Tracker extends EventEmitter {
             this.emit('connected');
             this.status = 'connected';
             live.on('read', (data) => {
-              console.log('data');
               // 8cbca859 e70d0000 0c572600 8103     3c00      1400       4d        02
               // time     steps    distanse calories elevation veryActive heartRate heartrate
               const time = new Date(arrange4Bytes(data, 0) * 1000);
