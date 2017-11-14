@@ -31,6 +31,7 @@ If you want to get heart rate from your trackers, you need to comment out [the l
 
 ### for Fitbit Trackers
 \# 2017/11/15 updated
+
 This module doesn't work for the following trackers.
 
 - Fitbit Ionic
