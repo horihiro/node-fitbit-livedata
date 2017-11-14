@@ -53,13 +53,13 @@ Promise.resolve().then(() => {
     .then((username) => {
       const isRequired = program.username !== username;
       program.username = username;
-      return !isRequired && (program.password || new Promise((resolve) => {
+      return isRequired ? (program.password || new Promise((resolve) => {
         rl.question('Password : ', (answer) => {
           mutableStdout.muted = false;
           resolve(answer);
         });
         mutableStdout.muted = true;
-      }));
+      })) : program.password;
     })
     .then((password) => {
       program.password = password;
