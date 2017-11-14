@@ -45,24 +45,22 @@ const discoverDescriptorsAsync = characteristic => new Promise((resolve, reject)
 });
 
 const subscribeAsync = characteristic => new Promise((resolve) => {
-  characteristic.subscribe(() => {
-    resolve();
-  });
+  characteristic.subscribe();
+  resolve();
 });
 
 const unsubscribeAsync = characteristic => new Promise((resolve) => {
-  characteristic.unsubscribe(() => {
-    resolve();
-  });
+  characteristic.unsubscribe();
+  resolve();
 });
 
 const writeData = (reqCh, reqData, resCh, cond) => new Promise((resolve) => {
   const onNotify = function onNotify(responseData) {
     debug('fitbit-livedata')(`HOST <-- ${this.uuid} '${responseData.toString('hex')}'`);
     if (cond(responseData)) resolve(responseData);
-    else this.once('read', onNotify.bind(this));
+    else this.once('data', onNotify.bind(this));
   };
-  resCh.once('read', onNotify.bind(resCh));
+  resCh.once('data', onNotify.bind(resCh));
   reqCh.write(reqData, true, () => {
     debug('fitbit-livedata')(`HOST --> ${reqCh.uuid} '${reqData.toString('hex')}'`);
   });
