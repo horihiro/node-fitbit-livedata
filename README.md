@@ -29,6 +29,12 @@ And this module on Windows can't get heart rate from your trackers.
 ### for Raspbian
 If you want to get heart rate from your trackers, you need to comment out [the line](https://github.com/sandeepmistry/bleno/blob/master/lib/hci-socket/bindings.js#L137) in `node_modules/bleno/lib/hci-socket/bindings.js` ([bleno's issue](https://github.com/sandeepmistry/bleno/issues/326))
 
+### for Fitbit Trackers
+\# 2017/11/15 updated
+This module doesn't work for the following trackers.
+
+- Fitbit Ionic
+
 ## Install
 This moudle is not published on npm yet.
 So you have to clone this project at first.
