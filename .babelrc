@@ -5,5 +5,7 @@
   "plugins": [
     "dynamic-import-node",
     "syntax-dynamic-import"
-  ]
+  ],
+  "sourceMaps": true,
+  "retainLines": true
 }

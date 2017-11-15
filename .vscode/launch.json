@@ -1,0 +1,36 @@
+{
+  // IntelliSense を使用して利用可能な属性を学べます。
+  // 既存の属性の説明をホバーして表示します。
+  // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch CLI",
+      "program": "${workspaceFolder}/src/bin/cli.js",
+      "stopOnEntry": false,
+      "args": [
+        "-u",
+        "<USERNAME>",
+        "-p",
+        "<PASSWORD>"
+      ],
+      "cwd": "${workspaceRoot}",
+      "preLaunchTask": null,
+      "runtimeExecutable": null,
+      "runtimeArgs": [
+        "--nolazy",
+        "--require",
+        "babel-register"
+      ],
+      "env": {
+          "NODE_ENV": "development",
+          "DEBUG": "node-fitbit-livedata*,tracker"
+      },
+      "console": "internalConsole",
+      "sourceMaps": true,
+      "outFiles": []
+    }
+  ]
+}
