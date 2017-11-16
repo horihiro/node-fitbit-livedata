@@ -16,6 +16,7 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
     - Java (v1.8.0 or later)
 - Fitbit Account
 - Fitbit Tracker(Device) registered in the above account
+    - Ionic
     - Charge HR
 
 ## Remarks
@@ -30,11 +31,29 @@ And this module on Windows can't get heart rate from your trackers.
 If you want to get heart rate from your trackers, you need to comment out [the line](https://github.com/sandeepmistry/bleno/blob/master/lib/hci-socket/bindings.js#L137) in `node_modules/bleno/lib/hci-socket/bindings.js` ([bleno's issue](https://github.com/sandeepmistry/bleno/issues/326))
 
 ### for Fitbit Trackers
-\# 2017/11/15 updated
+\# 2017/11/17 updated
 
 This module doesn't work for the following trackers.
 
-- Fitbit Ionic
+- ~~Fitbit Ionic~~
+
+The following trackers are not verified yet.<br>
+\# I don't have them
+
+- Charge 2
+- Alta HR
+- Blaze
+- Flyer
+- Flex 2
+- Surge
+- Charge
+- Flex
+- One
+- Zip
+- Ultra
+- Force
+- Aria 2
+
 
 ## Install
 This moudle is not published on npm yet.
