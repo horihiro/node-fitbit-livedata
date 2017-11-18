@@ -84,30 +84,29 @@ $ npm i . -g
 import fitbit from 'fitbit-livedata';
 
 fitbit.on('discover', (tracker) => {
-  tracker.on('disconnected', (data) => {
-    console.log('tracker is disconnected.');
-
-    // if you want to re-connect automatically.
-    tracker.connect();    
-  });
-
-  tracker.on('connecting', (data) => {
+  tracker.on('connecting', () => {
     console.log('connecting to the tracker');
   });
-  tracker.on('connected', (data) => {
-    console.log('tracker is connected.');
-  });
-  tracker.on('openingSession', (data) => {
+  tracker.on('openingSession', () => {
     console.log('start tracker session');
   });
-  tracker.on('authenticating', (data) => {
-    console.log('start tracker authention.');
+  tracker.on('authenticating', () => {
+    console.log('start tracker authentication process.');
   });
-  tracker.on('sendAuth', (data) => {
-    console.log('start tracker authention.');
+  tracker.on('sendAuth', () => {
+    console.log('send authention infomation.');
   });
-  tracker.on('authenticated', (data) => {
-    debug('tracker')('authenticated');
+  tracker.on('authenticated', () => {
+    console.log('finishing tracker authentication process...');
+  });
+  tracker.on('connected', () => {
+    console.log('tracker is connected.');
+
+    tracker.on('disconnected', () => {
+      console.log('tracker is disconnected.');
+      // if you want to re-connect automatically.
+      tracker.connect();    
+    });
   });
   tracker.on('data', (livedata) => {
     process.stdout.write(`${JSON.stringify(livedata)}\n`);
@@ -164,6 +163,12 @@ $ fitbit-livedata -u <USERNAME> -p <PASSWORD>
 {"device":{"name":"Charge HR","address":"XX:XX:XX:XX:XX:XX","serialNumber":"0123456789ab"},"livedata":{"time":"YYYY-MM-DDThh:mm:dd.sssZ","steps":5700,"distance":4024236,"calories":1220,"elevation":13,"veryActive":2,"heartRate":80}}
 {"device":{"name":"Charge HR","address":"XX:XX:XX:XX:XX:XX","serialNumber":"0123456789ab"},"livedata":{"time":"YYYY-MM-DDThh:mm:dd.sssZ","steps":5700,"distance":4024236,"calories":1220,"elevation":13,"veryActive":2,"heartRate":82}}
  :
+```
+
+If you want to connect to only one tracker, add the tracker name( e.g. "Charge HR") with `--trackername`/`-n` option.
+
+```sh
+$ fitbit-livedata -u <USERNAME> -p <PASSWORD> -n "Charge HR"
 ```
 
 ## Memo

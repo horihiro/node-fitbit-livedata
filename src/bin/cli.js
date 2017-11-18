@@ -28,6 +28,7 @@ program
   .version(pkg.version)
   .option('-u, --username [value]', 'username')
   .option('-p, --password [value]', 'password')
+  .option('-t, --trackername [value]', 'trackername')
   .option('-c, --authcodes <items>', 'authentication codes', parseCodes, [])
   .parse(process.argv);
 
@@ -121,6 +122,11 @@ Promise.resolve().then(() => {
         process.stderr.write(`${error}\n`);
         process.exit(1);
       });
-      fitbit.scanTrackers(trackers);
+      const filtered = program.trackername ? trackers.filter(t => t.name === program.trackername) : trackers;
+      if (filtered.length === 0) {
+        process.stderr.write(`Tracker '${program.name}' is not found.`);
+        process.exit(1);
+      }
+      fitbit.scanTrackers(filtered);
     });
   });
