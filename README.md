@@ -18,10 +18,26 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
 - Fitbit Tracker(Device) registered in the above account
     - Ionic
     - Charge HR
+  
+  The following trackers are not verified yet.<br>
+  \# I don't have them
+  - Charge 2
+  - Alta HR
+  - Blaze
+  - Flyer
+  - Flex 2
+  - Surge
+  - Charge
+  - Flex
+  - One
+  - Zip
+  - Ultra
+  - Force
+  - Aria 2
 
 ## Remarks
 ### for Mac
-Using this module on macOS, you need to use a tracker which you have connected to your macOS previously.
+Using this module on macOS, you need to connect or sync the macOS and your tracker with the [official application](https://www.fitbit.com/jp/setup?platform=mac10_5) **only once** before using this module.
 
 ### for Windows
 Because of using [noble-uwp](https://github.com/jasongin/noble-uwp) (it's very useful !), the version of your windows has to be Creators Update or later.<br>
@@ -30,36 +46,12 @@ And this module on Windows can't get heart rate from your trackers.
 ### for Raspbian
 If you want to get heart rate from your trackers, you need to comment out [the line](https://github.com/sandeepmistry/bleno/blob/master/lib/hci-socket/bindings.js#L137) in `node_modules/bleno/lib/hci-socket/bindings.js` ([bleno's issue](https://github.com/sandeepmistry/bleno/issues/326))
 
-### for Fitbit Trackers
-\# 2017/11/17 updated
-
-This module doesn't work for the following trackers.
-
-- ~~Fitbit Ionic~~
-
-The following trackers are not verified yet.<br>
-\# I don't have them
-
-- Charge 2
-- Alta HR
-- Blaze
-- Flyer
-- Flex 2
-- Surge
-- Charge
-- Flex
-- One
-- Zip
-- Ultra
-- Force
-- Aria 2
-
 
 ## Install
 This moudle is not published on npm yet.
 So you need to clone this repository and build with babel this project at first.
 
-```
+```sh
 $ git clone https://github.com/horihiro/node-fitbit-livedata.git
 $ cd node-fitbit-livedata
 $ npm i .
@@ -67,15 +59,27 @@ $ npm run gulp babel
 ```
 
 ### Install as library
-
-```
+Do `npm install`(or `npm i`) in your project directory.
+```sh
 $ cd /path/to/your/project/
 $ npm i /path/to/node-fitbit-livedata
 ```
 
+After `npm install`, you can see this module in `dependencies` of your `package.json`, the key is `fitbit-livedata` and the value is the path to `node-fitbit-livedata`.
+```sh
+$ cat /path/to/your/project/package.json
+{
+  "name": "<YOUR_`PROJECT_NAME>",
+    :
+  "dependencies": {
+    "fitbit-livedata": "file:/path/to/node-fitbit-livedata"
+  }
+}
+```
+
 ### Install as CLI tool
 
-```
+```sh
 $ npm i -g /path/to/node-fitbit-livedata
 ```
 
