@@ -57,23 +57,26 @@ The following trackers are not verified yet.<br>
 
 ## Install
 This moudle is not published on npm yet.
-So you have to clone this project at first.
+So you need to clone this repository and build with babel this project at first.
 
 ```
 $ git clone https://github.com/horihiro/node-fitbit-livedata.git
 $ cd node-fitbit-livedata
+$ npm i .
+$ npm run gulp babel
 ```
 
 ### Install as library
 
 ```
-$ npm i .
+$ cd /path/to/your/project/
+$ npm i /path/to/node-fitbit-livedata
 ```
 
 ### Install as CLI tool
 
 ```
-$ npm i . -g
+$ npm i -g /path/to/node-fitbit-livedata
 ```
 
 ## Usage
