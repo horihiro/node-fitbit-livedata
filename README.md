@@ -177,10 +177,10 @@ $ fitbit-livedata -u <USERNAME> -p <PASSWORD>
  :
 ```
 
-If you want to connect to only one tracker, add the tracker name( e.g. "Charge HR") with `--trackername`/`-n` option.
+If you want to connect to only one tracker, add the tracker name( e.g. "Charge HR") with `--trackername`/`-t` option.
 
 ```sh
-$ fitbit-livedata -u <USERNAME> -p <PASSWORD> -n "Charge HR"
+$ fitbit-livedata -u <USERNAME> -p <PASSWORD> -t "Charge HR"
 ```
 
 ## Memo
