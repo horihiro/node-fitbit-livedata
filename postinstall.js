@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 if (process.platform.toLowerCase() !== 'linux') process.exit(0);
 
 const fs = require('fs');

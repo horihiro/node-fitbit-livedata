@@ -12,7 +12,7 @@
   },
   "scripts": {
     "gulp": "gulp",
-    "postinstall": "node ./postinstall.js",
+    "postinstall": "./postinstall.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "horihiro",
