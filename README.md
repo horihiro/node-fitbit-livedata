@@ -8,32 +8,35 @@ Using this module sometimes forcibly logs out from fitbit application on your mo
 
 ## Requirement
 - Host Machine
-    - macOS El Capitan
-    - Windows10 Creators Update or later
-    - Raspbian 4.9
+  - macOS El Capitan
+  - Windows10 Creators Update or later
+  - Raspbian 4.9
 - Runtime
-    - node.js (v6 or later)
-    - Java (v1.8.0 or later)
+  - node.js (v6 or later)
+  - Java (v1.8.0 or later)
 - Fitbit Account
 - Fitbit Tracker(Device) registered in the above account
-    - Ionic
+  - Supported Trackers are
     - Charge HR
   
-  The following trackers are not verified yet.<br>
-  \# I don't have them
-  - Charge 2
-  - Alta HR
-  - Blaze
-  - Flyer
-  - Flex 2
-  - Surge
-  - Charge
-  - Flex
-  - One
-  - Zip
-  - Ultra
-  - Force
-  - Aria 2
+    The following trackers are not supported yet.
+    - Ionic
+
+    The following trackers are not verified yet.<br>
+    \# I don't have them
+    - Charge 2
+    - Alta HR
+    - Blaze
+    - Flyer
+    - Flex 2
+    - Surge
+    - Charge
+    - Flex
+    - One
+    - Zip
+    - Ultra
+    - Force
+    - Aria 2
 
 ## Remarks
 ### for Mac
