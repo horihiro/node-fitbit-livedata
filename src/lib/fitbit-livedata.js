@@ -233,7 +233,7 @@ export default class FitbitLiveData extends EventEmitter {
   }
 
   getTrackers(authinfo) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       generateBtleCredentials(authinfo)
         .then((trackers) => {
           debug('fitbit-livedata')('login succeeded');
@@ -241,7 +241,7 @@ export default class FitbitLiveData extends EventEmitter {
         })
         .catch((err) => {
           debug('fitbit-livedata')(err.response.data.errors.map(e => e.message).join('\n'));
-          resolve([]);
+          reject(err);
         });
     });
   }

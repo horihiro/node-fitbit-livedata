@@ -85,7 +85,12 @@ Promise.resolve().then(() => {
             })
             .catch((err) => {
               debug('fitbit-livedata-cli')(`${err}`);
-              resolve();
+              if (!authCodes || authCodes.length <= 1) {
+                process.stderr.write('login failed\n');
+                process.exit(1);
+              } else {
+                resolve();
+              }
             }))), Promise.resolve()).then(() => {
       debug('fitbit-livedata-cli')(`all trackers are ${JSON.stringify(trackers, null, 2)}`);
       fitbit.on('discover', (tracker) => {
@@ -124,7 +129,7 @@ Promise.resolve().then(() => {
       });
       const filtered = program.trackername ? trackers.filter(t => t.name === program.trackername) : trackers;
       if (filtered.length === 0) {
-        process.stderr.write(`Tracker '${program.name}' is not found.`);
+        process.stderr.write((program.trackername ? `Tracker '${program.trackername}' is ` : 'Trackers are ') + 'not found.');
         process.exit(1);
       }
       fitbit.scanTrackers(filtered);
