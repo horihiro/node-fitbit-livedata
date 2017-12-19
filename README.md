@@ -53,21 +53,11 @@ If you want to get heart rate from your trackers, you need to comment out [the l
 Some trackers need to be set `On` or `Auto` about heart rate using FItbit app for a smartphone, and sync after that.
 
 ## Install
-This moudle is not published on npm yet.
-So you need to clone this repository and build with babel this project at first.
-
-```sh
-$ git clone https://github.com/horihiro/node-fitbit-livedata.git
-$ cd node-fitbit-livedata
-$ npm i .
-$ npm run gulp babel
-```
-
 ### Install as library
 Do `npm install`(or `npm i`) in your project directory.
 ```sh
 $ cd /path/to/your/project/
-$ npm i /path/to/node-fitbit-livedata
+$ npm i fitbit-livedata
 ```
 
 After `npm install`, you can see this module in `dependencies` of your `package.json`, the key is `fitbit-livedata` and the value is the path to `node-fitbit-livedata`.
@@ -85,7 +75,7 @@ $ cat /path/to/your/project/package.json
 ### Install as CLI tool
 
 ```sh
-$ npm i -g /path/to/node-fitbit-livedata
+$ npm i -g fitbit-livedata
 ```
 
 ## Usage
