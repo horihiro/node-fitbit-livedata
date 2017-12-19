@@ -1,6 +1,6 @@
 {
   "name": "fitbit-livedata",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/index.js",
   "bin": {
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "gulp": "gulp",
-    "postinstall": "./postinstall.js",
+    "postinstall": "node ./postinstall.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "horihiro",
