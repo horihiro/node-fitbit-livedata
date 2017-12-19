@@ -2,6 +2,7 @@ docs/
 examples/
 node_modules/
 src/
+.vscode/
 .babelrc
 .eslintrc
 package-lock.json
