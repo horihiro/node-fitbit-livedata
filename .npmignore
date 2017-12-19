@@ -5,6 +5,7 @@ src/
 .babelrc
 .eslintrc
 gulpfile.babel.js
-sequence.mmd
-sequence.svg
+*.mmd
+*.png
+*.svg
 *.log
