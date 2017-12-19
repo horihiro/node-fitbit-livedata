@@ -129,7 +129,7 @@ Promise.resolve().then(() => {
       });
       const filtered = program.trackername ? trackers.filter(t => t.name === program.trackername) : trackers;
       if (filtered.length === 0) {
-        process.stderr.write((program.trackername ? `Tracker '${program.trackername}' is ` : 'Trackers are ') + 'not found.');
+        process.stderr.write(`${(program.trackername ? `Tracker '${program.trackername}' is ` : 'Trackers are ')}not found.`);
         process.exit(1);
       }
       fitbit.scanTrackers(filtered);
