@@ -3,7 +3,7 @@ if (process.platform.toLowerCase() !== 'linux') process.exit(0);
 
 const fs = require('fs');
 
-const TARGET = './node_modules/bleno/lib/hci-socket/bindings.js';
+const TARGET = '../bleno/lib/hci-socket/bindings.js';
 
 const readFileAsync = path => new Promise((resolve, reject) => {
   fs.readFile(path, (err, data) => {
