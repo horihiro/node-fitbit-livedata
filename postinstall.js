@@ -3,7 +3,23 @@ if (process.platform.toLowerCase() !== 'linux') process.exit(0);
 
 const fs = require('fs');
 
-const TARGET = '../bleno/lib/hci-socket/bindings.js';
+const TARGETS = [
+  './node_modules/bleno/lib/hci-socket/bindings.js',
+  '../bleno/lib/hci-socket/bindings.js',
+];
+
+const findTarget = (cands) => {
+  let ret = '';
+  const res = cands.some((cand) => {
+    ret = cand;
+    return fs.existsSync(cand);
+  });
+  if (res) return ret;
+  return '';
+};
+
+const TARGET = findTarget(TARGETS);
+if (!TARGET) process.exit(1);
 
 const readFileAsync = path => new Promise((resolve, reject) => {
   fs.readFile(path, (err, data) => {
@@ -57,4 +73,5 @@ renameFileAsync(TARGET, `${TARGET}.orig`)
   .then(content => writeFileAsync(TARGET, content))
   .catch((err) => {
     console.error(err);
+    process.exit(0);
   });
