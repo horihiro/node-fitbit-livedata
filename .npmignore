@@ -4,6 +4,7 @@ node_modules/
 src/
 .babelrc
 .eslintrc
+package-lock.json
 gulpfile.babel.js
 *.mmd
 *.png
